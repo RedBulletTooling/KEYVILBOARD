@@ -32,6 +32,8 @@
      
      
      * The payload methods work by listing to text messages being send to the gsmmodule and containing certaint keywords. So for starting the example payload that is provided in the code you will send a text message to the module that says "Execute:Payload" once this string is recieved by the module and the subject hasn't typed for 15 seconds it will execute the payload. 
+     
+     * We are using 32kb atmega32u4 chips with the current code their is about 15kb left for additional payloads.
  
  
      
