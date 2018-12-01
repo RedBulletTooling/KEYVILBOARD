@@ -34,6 +34,8 @@
      * The payload methods work by listing to text messages being send to the gsmmodule and containing certaint keywords. So for starting the example payload that is provided in the code you will send a text message to the module that says "Execute:Payload" once this string is recieved by the module and the subject hasn't typed for 15 seconds it will execute the payload. 
      
      * We are using 32kb atmega32u4 chips with the current code their is about 15kb left for additional payloads.
+     
+     * What makes this module extra cool is that is pretty much is smart keylogging allthough some passwords and usenames must be manually filled in with ManualPassword functions it makes it posible to exfill data trew a users own input. A cool proof on concept would be to send certaint files that are for instance classified trew the email of the subject itself. It's possible to all this withg out ever running any code on the system of the subject.
  
  
      
