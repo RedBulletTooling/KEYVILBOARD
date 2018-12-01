@@ -35,7 +35,7 @@
      
      * We are using 32kb atmega32u4 chips with the current code their is about 15kb left for additional payloads.
      
-     * What makes this module extra cool is that is pretty much is smart keylogging allthough some passwords and usenames must be manually filled in with ManualPassword functions it makes it posible to exfill data trew a users own input. A cool proof on concept would be to send certaint files that are for instance classified trew the email of the subject itself. It's possible to all this withg out ever running any code on the system of the subject.
+     * What makes this module extra cool is that is pretty much is smart keylogging allthough some passwords and usenames must be manually filled in with ManualPassword functions it makes it posible to exfill data trew a users own input. A cool proof on concept would be to send certaint files that are for instance classified trew the email of the subject itself. It's possible to all this with out ever running any code on the system of the subject.
  
  
      
