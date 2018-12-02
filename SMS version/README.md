@@ -26,16 +26,16 @@
 
 * Code
      
-     * The keylogging will be at all times presistence the subject will never notice anything diffrent since that the modules are using a raw HID constant trewput no delay no change. We have even tested them while gameing and noticed no diffrence. Thanks to michalmonday for making this possible with his libary.
+     * The keylogging will be at all times persistence the subject will never notice anything different since that the modules are using a raw HID constant throughput no delay no change. We have even tested them while gaming and noticed no difference. Thanks to michalmonday for making this possible with his library.
      
-     * The code contains some payload methods if you do not own the right to use those, dont! These payload methods contain the posibility to execute any kind of evil keyboard style attack while also being smart. Since it captures the windows password if that password is enterd the wrong the first time your able to manualy change it with the ManualPass: function. Everything afther the ":" will be the password you can also change and implement these methods in diffrent ways and apply them to other login forms. With these modules you have a fully airgaped way of listening and an unlimited time vector for when to attack. 
+     * The code contains some payload methods if you do not own the right to use those, don’t! These payload methods contain the possibility to execute any kind of evil keyboard style attack while also being smart. Since it captures the windows password if that password is enterd the wrong the first time your able to manually change it with the ManualPass: function. Everything after the ":" will be the password you can also change and implement these methods in diffrent ways and apply them to other login forms. With these modules you have a fully airgaped way of listening and an unlimited time vector for when to attack. 
      
      
-     * The payload methods work by listing to text messages being send to the gsmmodule and containing certaint keywords. So for starting the example payload that is provided in the code you will send a text message to the module that says "Execute:Payload" once this string is recieved by the module and the subject hasn't typed for 15 seconds it will execute the payload. 
+     * The payload methods work by listing to text messages being send to the gsm module and containing certaint keywords. So for starting the example payload that is provided in the code you will send a text message to the module that says "Execute:Payload" once this string is received by the module and the subject hasn't typed for 15 seconds it will execute the payload. 
      
      * We are using 32kb atmega32u4 chips with the current code their is about 15kb left for additional payloads.
      
-     * What makes this module extra cool is that is pretty much is smart keylogging allthough some passwords and usenames must be manually filled in with ManualPassword functions it makes it posible to exfill data trew a users own input. A cool proof on concept would be to send certaint files that are for instance classified trew the email of the subject itself. It's possible to all this with out ever running any code on the system of the subject.
+     * What makes this module extra cool is that is pretty much is smart keylogging although some passwords and usernames must be manually filled in with ManualPassword functions it makes it possible to exfill data threw a user’s own input. A cool proof on concept would be to send certaint files that are for instance classified threw the email of the subject itself. It's possible to all this without ever running any code on the system of the subject.
  
  
      
