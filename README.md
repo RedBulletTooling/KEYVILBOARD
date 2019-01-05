@@ -1,7 +1,7 @@
 # KEYVILBOARD
 All KEYVIBLOARD modules work fully opensource and are hand assambled in the Netherlands. Thank you for buying one of our modules if have not yet bought one and would like one go to [website]
 
-# KEYBILBOARD.STL
+# KEYVILBOARD.STL
 This file contains the case that is also deliverd with your Module it works for both SMS & WIFI. 
 
 # SMS Version
