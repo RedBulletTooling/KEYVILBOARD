@@ -4,7 +4,7 @@
 
 * SIM Lock remove
 
-     Make sure your remove the simlock from the simcard you intent to use in Module easy way to do that is by putting it in an older           phone     and removing it their not all new have that option.
+     Make sure your remove the simlock from the simcard you intent to use in Module easy way to do that is by putting it in an older           phone     and removing it their not all new phones have the option.
   
 * SIM Advice
   
