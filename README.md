@@ -1,7 +1,7 @@
 # KEYVILBOARD
 All KEYVIBLOARD modules are fully opensource and are hand assambled in the Netherlands. Thank you for buying one of our modules if have not yet bought one and would like one go to https://keyvilboard.nl.
 
-Why is the KEYVILBOARD better than all the other keyloggers that are available?
+## Why would you buy a KEYVILBOARD and not just some other keylogger?
 
 - It's open source
 
@@ -15,16 +15,16 @@ This project initialy started due too the high prices online for keyloggers that
 
 Most keyloggers only store the keystrokes locally, which requires you to have physical access at least two times instead of just one time. There are some keyloggers that support remote Wi-Fi access, but the software is closed source and the antenna too small causing short range. With the KEYVILBOARD you can access the device from **practically anywhere in the world** using SMS for long term operations and from an actual safe distance using Wi-Fi for ad-hoc operations. Besides that we also have other cool features like **keystroke injection that no other keylogger on the market currently has**.
 
-# KEYVILBOARD.STL
+## KEYVILBOARD.STL
 This file contains the 3d printed case that is also delivered with your KEYVILBOARD, it fits for both SMS & Wi-Fi editions. 
 
-# SMS Version
+## SMS Version
 This folder contains the code + libary used within the SMS version.
 
-# Wi-Fi Version
+## Wi-Fi Version
 This folder contains the code + libary used within the Wi-Fi version.
 
-# Credits
+## Credits
 Special thanks to [michalmonday](https://github.com/michalmonday) and [spacehuhn](https://github.com/spacehuhn) for the code we were able to implement in our code. 
 
 **If you have any improvements to our code or found a bug please create an issue or pull request!**
