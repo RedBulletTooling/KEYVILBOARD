@@ -1,6 +1,10 @@
 # KEYVILBOARD
 All KEYVIBLOARD modules are fully opensource and are hand assambled in the Netherlands. Thank you for buying one of our modules if have not yet bought one and would like one go to https://keyvilboard.nl.
 
+**If you have any improvements to our code or found a bug please create an issue or pull request!**
+
+If you want to contact us, please email us via [info@keyvilboard.nl](mailto:info@keyvilboard.nl).
+
 ## Why would you buy a KEYVILBOARD and not just some other keylogger?
 
 - It's open source
@@ -26,7 +30,3 @@ This folder contains the code + libary used within the Wi-Fi version.
 
 ## Credits
 Special thanks to [michalmonday](https://github.com/michalmonday) and [spacehuhn](https://github.com/spacehuhn) for the code we were able to implement in our code. 
-
-**If you have any improvements to our code or found a bug please create an issue or pull request!**
-
-If you want to contact us, please email us via [info@keyvilboard.nl](mailto:info@keyvilboard.nl).
