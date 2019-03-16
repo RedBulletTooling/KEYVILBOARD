@@ -11,7 +11,7 @@
 
 #define BAUD_RATE 115200
 #define bufferSize 600
-#define debug true
+#define debug false
 
 /* ============= CHANGE WIFI CREDENTIALS ============= */
 const char *ssid = "KEYVILBOARD";
