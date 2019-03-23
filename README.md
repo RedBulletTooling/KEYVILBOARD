@@ -23,10 +23,10 @@ Most keyloggers only store the keystrokes locally, which requires you to have ph
 This file contains the 3d printed case that is also delivered with your KEYVILBOARD, it fits for both SMS & Wi-Fi editions. 
 
 ## SMS Version
-This folder contains the code + libary used within the SMS version.
+This folder contains the instructions, code + libary used within the SMS version.
 
 ## Wi-Fi Version
-This folder contains the code + libary used within the Wi-Fi version.
+This folder contains the instructions, code + libary used within the Wi-Fi version.
 
 ## Credits
 Special thanks to [michalmonday](https://github.com/michalmonday) and [spacehuhn](https://github.com/spacehuhn) for the code we were able to implement in our code. 
