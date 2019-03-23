@@ -60,11 +60,11 @@ void Settings::save() {
 void Settings::reset() {
 	if(debug) Serial.println("Reset Settings");
 
-	String _ssid = "WiFi Duck";
+	String _ssid = "KEYVILBOARD";
 	_ssid.toCharArray(ssid, 32);
 	ssidLen = _ssid.length();
 
-	String _pswd = "quackquack";
+	String _pswd = "keylogger";
 	_pswd.toCharArray(password, 32);
 	passwordLen = _pswd.length();
 
