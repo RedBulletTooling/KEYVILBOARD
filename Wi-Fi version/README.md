@@ -6,7 +6,7 @@ Out of the box the KEYVILBOARD Wi-Fi has the following settings:
 - SSID: KEYVILBOARD
 - Password: keylogger
 
-After inserting the KEYVILBOARD Wi-Fi you can connect to the created hotspot (192.168.1.4) and configure these settings in the settings menu. It is advised to change the network to hidden, to prevent other user from getting alarmed, and obvisously to change the password.
+After inserting the KEYVILBOARD Wi-Fi you can connect to the created hotspot (192.168.4.1) and configure these settings in the settings menu. It is advised to change the network to hidden, to prevent other user from getting alarmed, and obvisously to change the password.
 
 **Only connect the keyboard after the KEYVILBOARD has been inserted into the USB port for a few seconds. Otherwise the keyboard and KEYVILBOARD WILL NOT work. This is due to a capacitor on the board that was added for stability.**
 
