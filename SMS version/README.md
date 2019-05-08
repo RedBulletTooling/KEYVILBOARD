@@ -11,6 +11,10 @@
 * SIM Advice
   
      I reccomend you to take a unlimited texting subscription these will cost about 7-8 euro's a month monthly cancelable keep in mind         these are trackable so dont be doing anything illigal with our modules.
+
+* SIM Orientation
+
+     ![alt text](https://lh3.googleusercontent.com/E8Kcp26cz3vDC4s0K-IPgdhwn4rWDxQOEak0n5fNE3A9PNtK_xaDFQE3phaOVhsEZ4FHP0vDYI4ojeq14YkR=w1919-h969-rw)
   
 * Conclusion
   
