@@ -1,4 +1,7 @@
 # KEYVILBOARD SMS SETUP/Functions
+VIDEO Tutorial
+
+https://www.youtube.com/watch?v=Gzcc9Jt0PkE
 
 **Only connect the keyboard after the KEYVILBOARD has been inserted into the USB port for a few seconds. Otherwise the keyboard and KEYVILBOARD WILL NOT work. This is due to a capacitor on the board that was added for stability.**
 
@@ -14,7 +17,7 @@
 
 * SIM Orientation
 
-     ![alt text](https://lh3.googleusercontent.com/E8Kcp26cz3vDC4s0K-IPgdhwn4rWDxQOEak0n5fNE3A9PNtK_xaDFQE3phaOVhsEZ4FHP0vDYI4ojeq14YkR=w1919-h969-rw)
+     ![alt text](https://imgur.com/8951f6e7-d4df-4f43-b124-ffc0e274d995)
   
 * Conclusion
   
