@@ -21,7 +21,7 @@ C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/false);            // comm
 
 */
 
-#define BAUD_RATE_ESP8266 115200                      // default was 9600 
+#define BAUD_RATE_ESP8266 9600                      // default was 9600 
 #define BAUD_RATE_USB_HOST_BOARD 115200              // default was 9600
 #define BAUD_RATE_SERIAL 115200
 
@@ -178,7 +178,7 @@ void loop() {
     }
     
     bufferStr = "";
-    //Esp8266.write(0x99); This will interfere with the keylogger, after testing it did not seem to impact the funcionality of the code. (but it is present in the original code)
+    //Esp8266.write(0x99);
     Serial.println("done");
   }
 }
