@@ -1,5 +1,5 @@
 # KEYVILBOARD
-All KEYVIBLOARD modules are fully opensource and are hand assambled in the Netherlands. Thank you for buying one of our modules if have not yet bought one and would like one go to https://keyvilboard.nl. (Website is in Dutch and we are currently only focus on selling in the Netherlands - contact us via e-mail if you want to buy from outside of the Netherlands)
+All KEYVILBOARD modules are fully opensource and are hand assambled in the Netherlands. Thank you for buying one of our modules if have not yet bought one and would like one go to https://keyvilboard.nl. (Website is in Dutch and we are currently only focus on selling in the Netherlands - contact us via e-mail if you want to buy from outside of the Netherlands)
 
 **If you have any improvements to our code or found a bug please create an issue or pull request!**
 
