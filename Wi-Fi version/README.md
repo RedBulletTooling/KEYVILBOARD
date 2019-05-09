@@ -10,7 +10,7 @@ After inserting the KEYVILBOARD Wi-Fi you can connect to the created hotspot (19
 
 **Only connect the keyboard after the KEYVILBOARD has been inserted into the USB port for a few seconds. Otherwise the keyboard and KEYVILBOARD WILL NOT work. This is due to a capacitor on the board that was added for stability.**
 
-# Updating the KEYVILBOARD Wi-Fi
+## Updating the KEYVILBOARD Wi-Fi
 
 Updating the KEYVILBOARD Wi-Fi is actually quite easy. Just go to the webinterface, click on info in the menu and click on the file button to select a new bin file which you then need to upload. If everything was uploaded successfully then you should a blank page with OK.
 
