@@ -12,7 +12,11 @@ After inserting the KEYVILBOARD Wi-Fi you can connect to the created hotspot (19
 
 ## Updating the KEYVILBOARD Wi-Fi
 
-Updating the KEYVILBOARD Wi-Fi is actually quite easy. Just go to the webinterface, click on info in the menu and click on the file button to select a new bin file which you then need to upload. If everything was uploaded successfully then you should a blank page with OK.
+Updating the KEYVILBOARD Wi-Fi is actually quite easy. You need to update the KEYVILBOARD itself and the ESP8266 chip.
+
+For the KEYVILBOARD itself you'll need to download the keyvilboard.ino inside the keyvilboard folder in this folder. Plug your KEYVILBOARD in and select the Arduino Leonardo COM port via the Arduino IDE. Also make sure to select the Arduino Leonarde board. Nothing more is needed, you can just upload it once that is configured.
+
+For the ESP8266 chip; just go to the webinterface, click on info in the menu and click on the file button to select a new bin file which you then need to upload. If everything was uploaded successfully then you should a blank page with OK.
 
 You can find the most recent .bin file for your ESP8266 chip in the esp8266_chip/keyvilboard_wifi folder.
 
