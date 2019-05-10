@@ -35,7 +35,6 @@ extern const uint8_t data_liveHTML[] PROGMEM;
 extern const uint8_t data_infoHTML[] PROGMEM;
 extern const uint8_t data_nomalizeCSS[] PROGMEM;
 extern const uint8_t data_skeletonCSS[] PROGMEM;
-extern const uint8_t data_license[] PROGMEM;
 extern const uint8_t data_settingsHTML[] PROGMEM;
 extern const uint8_t data_viewHTML[] PROGMEM;
 
@@ -46,8 +45,8 @@ bool runLine = false;
 bool runScript = false;
 File script;
 
-uint8_t scriptBuffer[bufferSize];
-uint8_t scriptLineBuffer[bufferSize];
+int scriptBuffer[bufferSize];
+int scriptLineBuffer[bufferSize];
 int bc = 0; //buffer counter
 int lc = 0; //line buffer counter
 
@@ -78,6 +77,12 @@ void send404(AsyncWebServerRequest *request){
 void sendToIndex(AsyncWebServerRequest *request){
   AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "");
   response->addHeader("Location","/");
+  request->send(response);
+}
+
+void sendToScripts(AsyncWebServerRequest *request){
+  AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "");
+  response->addHeader("Location","/scripts.html");
   request->send(response);
 }
 
@@ -150,11 +155,6 @@ void setup() {
 
   server.on("/view.html", HTTP_GET, [](AsyncWebServerRequest *request) {
 	  AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", data_viewHTML, sizeof(data_viewHTML));
-	  request->send(response);
-  });
-
-  server.on("license", HTTP_GET, [](AsyncWebServerRequest *request) {
-	  AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", data_license, sizeof(data_license));
 	  request->send(response);
   });
 
@@ -315,7 +315,7 @@ void setup() {
   });
 
   server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-    sendToIndex(request);
+    sendToScripts(request);
   }, handleUpload);
   
   server.onNotFound([](AsyncWebServerRequest *request){
@@ -388,7 +388,7 @@ void addToBuffer(){
 
 void loop() {
   if(shouldReboot) ESP.restart();
-  
+
   if(Serial.available()) {
     char c = (char)Serial.read();
     a.write(c);
