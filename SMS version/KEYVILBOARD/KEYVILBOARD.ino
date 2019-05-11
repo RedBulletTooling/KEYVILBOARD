@@ -25,6 +25,8 @@ byte b;
 String substr = "";
 int location;
 
+//You need to change the mobile phone number in THREE places!
+
 void setup() {
   delay(1000);                                              
   Serial.begin(BAUD_RATE_SERIAL);                                                   
@@ -60,7 +62,7 @@ void loop() {
       passcached++;
       SMSSERIAL.write("AT+CMGF=1\r\n");
       delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31685115534\"\r\n"); //phonenumber with land code
+      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
       delay(2);
       SMSSERIAL.write(password); 
       SMSSERIAL.write((char)26);
@@ -83,7 +85,7 @@ void loop() {
   if (char_count == CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && char_count > 5) {
       SMSSERIAL.write("AT+CMGF=1\r\n");
       delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31685115534\"\r\n"); //phonenumber with land code
+      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
       delay(2);
       SMSSERIAL.write(TextSms); 
       SMSSERIAL.write((char)26);
@@ -106,7 +108,7 @@ void loop() {
      if(SMS.indexOf("Password:Reveal") > -1){ //Keyword
       SMSSERIAL.write("AT+CMGF=1\r\n");
       delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31685115534\"\r\n"); //phonenumber with land code
+      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
       delay(2);
       SMSSERIAL.write(password);
       SMSSERIAL.write((char)26);
