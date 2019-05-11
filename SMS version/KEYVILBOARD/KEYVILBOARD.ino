@@ -23,6 +23,7 @@ char empty;
 int password_char_count;
 byte b;
 String substr = "";
+int location;
 
 void setup() {
   delay(1000);                                              
@@ -59,7 +60,7 @@ void loop() {
       passcached++;
       SMSSERIAL.write("AT+CMGF=1\r\n");
       delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
+      SMSSERIAL.write("AT+CMGS=\"+31685115534\"\r\n"); //phonenumber with land code
       delay(2);
       SMSSERIAL.write(password); 
       SMSSERIAL.write((char)26);
@@ -82,7 +83,7 @@ void loop() {
   if (char_count == CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && char_count > 5) {
       SMSSERIAL.write("AT+CMGF=1\r\n");
       delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
+      SMSSERIAL.write("AT+CMGS=\"+31685115534\"\r\n"); //phonenumber with land code
       delay(2);
       SMSSERIAL.write(TextSms); 
       SMSSERIAL.write((char)26);
@@ -105,19 +106,21 @@ void loop() {
      if(SMS.indexOf("Password:Reveal") > -1){ //Keyword
       SMSSERIAL.write("AT+CMGF=1\r\n");
       delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
+      SMSSERIAL.write("AT+CMGS=\"+31685115534\"\r\n"); //phonenumber with land code
       delay(2);
-      SMSSERIAL.write(password); 
+      SMSSERIAL.write(password);
       SMSSERIAL.write((char)26);
       char_count = 0;
      }
      if(SMS.indexOf("Manual:") > -1){       
-         substr = SMS.substring(57); //start from char 57 57 = : in Manual: 
+         location = SMS.indexOf("Manual:");
+         substr = SMS.substring(location + 7);
          Keyboard.print(substr);
       }
     //Manual Password overwrite incase first entry was wrong.
-     if(SMS.indexOf("ManualPass:") > -1){       
-         substr = SMS.substring(61);
+     if(SMS.indexOf("ManualPass:") > -1){    
+         location = SMS.indexOf("ManualPass:");   
+         substr = SMS.substring(location + 11);
          substr.toCharArray(password, 127);
       } 
   } 
