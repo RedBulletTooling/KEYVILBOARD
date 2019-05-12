@@ -25,6 +25,10 @@ Settings settings;
 
 bool shouldReboot = false;
 
+String command;
+char commando[1030];
+int arraySize = sizeof(commando) / sizeof(commando[0]);
+
 //Web stuff
 extern const uint8_t data_indexHTML[] PROGMEM;
 extern const uint8_t data_updateHTML[] PROGMEM;
@@ -49,6 +53,7 @@ int scriptBuffer[bufferSize];
 int scriptLineBuffer[bufferSize];
 int bc = 0; //buffer counter
 int lc = 0; //line buffer counter
+int i;
 
 File a;
 
@@ -269,7 +274,19 @@ void setup() {
 		  request->send(200, "text/plain", "true");
 	  }
 	  else if(request->hasArg("script")) {
-		  Serial.println(request->arg("script"));
+      Serial.println(request->arg("script"));
+      //command = request->arg("script");
+      //int half = 525;
+      //Serial.println(command.substring(0, half));
+      //delay(3000);
+      //Serial.println(command.substring(half));
+    //  command = request->arg("script");
+     // command.toCharArray(commando, 1030);
+     // for (int x=0; x < arraySize; x++){
+     //   delay(100);
+      //  Serial.write(commando[x]);
+      //}
+      //memset(commando, 0, sizeof(commando));
 		  request->send(200, "text/plain", "true");
 	  }
 	  else send404(request);
@@ -396,11 +413,12 @@ void loop() {
 
   if(runScript && runLine){
     if(script.available()){
-      uint8_t nextChar = script.read();
-    if(debug) Serial.write(nextChar);
-      scriptLineBuffer[lc] = nextChar;
-      lc++;
-      if(nextChar == 0x0D || lc == bufferSize) addToBuffer();
+ //     for(i=0;i<script.size();i++){
+        uint8_t nextChar = script.read();
+        scriptLineBuffer[lc] = nextChar;
+        lc++;
+        if(nextChar == 0x0D || lc == bufferSize) addToBuffer();
+   //   }
     }else{
       addToBuffer();
       if(bc > 0) sendBuffer();
