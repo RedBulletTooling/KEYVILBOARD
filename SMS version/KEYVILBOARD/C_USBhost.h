@@ -12,8 +12,8 @@ public:
     
     byte GetKey();
     void Begin(unsigned long baud_rate);
-    void SetMode(char mode);
-    void SetBaudRate(char* baud_rate);
+    bool SetMode(char mode);
+    bool SetBaudRate(char* baud_rate);
     static void ReleaseAllButtons(char* reason);   
 
 private:
@@ -45,6 +45,3 @@ private:
 
 
 #endif
-
-
-
