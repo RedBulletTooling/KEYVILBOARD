@@ -576,7 +576,7 @@ void loop(){
 
   // Send a beacon so we know that the implant is up
   // ToDo: this can infere with payloads execution
-  if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) > BEACON_TIME){
+  if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
       String msg = "Beacon - ";
       msg += IMPLANT_NAME;
 #ifdef DEBUG
