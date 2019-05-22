@@ -1,4 +1,3 @@
-
 /* NOTE: Make sure to edit SoftwareSerial.h to change 
  *  #define _SS_MAX_RX_BUFF 64 // RX buffer size
  *  to
