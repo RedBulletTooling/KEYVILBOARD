@@ -75,7 +75,7 @@ void loop(){
   if(captured_key){
     if(captured_key == 8){ // Backspace
       if(buffer_keystrokes.length() > 0){
-        buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 1);
+        buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 2);
       }
     }
     else{
