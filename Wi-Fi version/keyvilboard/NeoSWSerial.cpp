@@ -29,7 +29,7 @@
 // print() is supported
 //=============================================================================
 
-#include <NeoSWSerial.h>
+#include "NeoSWSerial.h"
 
 // Default baud rate is 9600
 static const uint8_t TICKS_PER_BIT_9600 = (uint8_t) 26;
