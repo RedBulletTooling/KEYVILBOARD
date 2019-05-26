@@ -7,7 +7,9 @@
 void SMSSerialFlush(){
   while(SMSSERIAL.available() > 0){
     int byte = SMSSERIAL.read();
+#ifdef DEBUG
     Serial.print((char)byte);
+#endif
   }
 }   
 
@@ -46,48 +48,50 @@ String readResponse(){
 }
 
 void collectDebugInfo(){
-  SMSSERIAL.write("AT+CMEE=1\r\n"); //enable debug
+  SMSSERIAL.println(F("AT+CMEE=1")); //enable debug
   readResponse();
-  Serial.println("--"); 
+  Serial.println(F("--")); 
   
-  SMSSERIAL.write("AT\r\n"); //Once the handshake test is successful, it will back to OK
+  SMSSERIAL.println(F("AT")); //Once the handshake test is successful, it will back to OK
   readResponse();
-  Serial.println("--");
+  Serial.println(F("--"));
   
-  SMSSERIAL.write("AT+CSQ\r\n"); //Signal quality test, value range is 0-31 , 31 is the best
+  SMSSERIAL.println(F("AT+CSQ")); //Signal quality test, value range is 0-31 , 31 is the best
   readResponse();
-  Serial.println("--");
+  Serial.println(F("--"));
   
-  SMSSERIAL.write("AT+CCID\r\n"); //Read SIM information to confirm whether the SIM is plugged
+  SMSSERIAL.println(F("AT+CCID")); //Read SIM information to confirm whether the SIM is plugged
   readResponse();
-  Serial.println("--");
+  Serial.println(F("--"));
 
   //read stored sms
-  SMSSERIAL.write("AT+CMGL=\"ALL\"\r\n"); 
+  SMSSERIAL.println(F("AT+CMGL=\"ALL\"")); 
   readResponse();
-  Serial.println("--");
+  Serial.println(F("--"));
 
   //check card is properly inserted
-  SMSSERIAL.write("AT+CPIN?\r\n"); 
+  SMSSERIAL.println(F("AT+CPIN?")); 
   String res = readResponse();
 
-  if(res.indexOf("CPIN: READY") <= 0){
-    Serial.println("The SIM card is not ready to be used. Check you inserted id correctly");
+#ifdef DEBUG
+  if(res.indexOf(F("CPIN: READY")) <= 0){
+    Serial.println(F("The SIM card is not ready to be used. Check you inserted id correctly"));
   }
+#endif
 }
 
 
 // Returns 1 if SMS was sucessfully sent or 0 if not
 void sendSMSMessage(String txt){
 #ifdef DEBUGWITHOUTSIM
-  Serial.println("Sending SMS: " + txt);
+  Serial.println(F("Sending SMS: ") + txt);
   return;
 #endif
   //mutex_SMS = true;
-  SMSSERIAL.write("AT+CMGF=1\r\n");
+  SMSSERIAL.println(F("AT+CMGF=1"));
   delay(2);
 
-  SMSSERIAL.write("AT+CMGS=\"" LEAK_PHONE_NUMBER "\"\r\n"); //phonenumber with land code 
+  SMSSERIAL.println("AT+CMGS=\"" LEAK_PHONE_NUMBER "\""); //phonenumber with land code 
   delay(2);
 
   SMSSERIAL.write(txt.c_str());

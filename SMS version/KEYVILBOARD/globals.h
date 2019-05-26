@@ -29,7 +29,8 @@ extern SoftwareSerial SMSSERIAL;
 
 #define SEPARATOR "##"
 
-#define CHAR_LIMIT 140                                
+#define SMS_CHAR_LIMIT 140
+#define MAX_BUFFER_SIZE 1024
 #define BAUD_RATE_SIM800L 57600                    
 #define BAUD_RATE_USB_HOST_BOARD 115200             
 #define BAUD_RATE_SERIAL 115200

