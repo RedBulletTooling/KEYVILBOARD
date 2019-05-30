@@ -6,9 +6,10 @@
 // Flush buffer of the SMS serial
 void SMSSerialFlush(){
   while(SMSSERIAL.available() > 0){
-    int byte = SMSSERIAL.read();
+    //int byte = SMSSERIAL.read();
+    SMSSERIAL.readString();
 #ifdef DEBUG
-    Serial.print((char)byte);
+    //Serial.print((char)byte);
 #endif
   }
 }   
@@ -24,7 +25,7 @@ String readResponse(){
     TIMEOUT--;
     if (TIMEOUT == 0){
 #ifdef DEBUG
-      Serial.println("Timeout reading response");
+      Serial.println(F("Timeout reading response"));
 #endif
       return "";
     }
@@ -83,15 +84,16 @@ void collectDebugInfo(){
 
 // Returns 1 if SMS was sucessfully sent or 0 if not
 void sendSMSMessage(String txt){
+  //return;
 #ifdef DEBUGWITHOUTSIM
-  Serial.println(F("Sending SMS: ") + txt);
+  Serial.print(F("Sending SMS: "));
+  Serial.println(txt);
   return;
 #endif
-  //mutex_SMS = true;
   SMSSERIAL.println(F("AT+CMGF=1"));
   delay(2);
 
-  SMSSERIAL.println("AT+CMGS=\"" LEAK_PHONE_NUMBER "\""); //phonenumber with land code 
+  SMSSERIAL.println("AT+CMGS=\"" LEAK_PHONE_NUMBER "\""); //phone number with land code 
   delay(2);
 
   SMSSERIAL.write(txt.c_str());
@@ -115,6 +117,8 @@ String getValue(String data, String separator, int index){
         strIndex[1] = (i == maxIndex) ? i+separator.length() : i;
     }
   }
-
-  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+  String sol = data.substring(strIndex[0], strIndex[1]);
+  sol.replace("\n", "");
+  sol.replace("\r", "");
+  return found>index ? sol : "";
 }

