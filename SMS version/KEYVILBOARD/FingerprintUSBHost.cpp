@@ -44,7 +44,8 @@ int FingerprintUSBHost_::getDescriptor(USBSetup& setup) {
     if (setup.wLength == 0xff) {
         guess.maybe_linux = 1;
         guess.maybe_win = 1;
-        guess.not_mac = 1; // In testing, MacOS NEVER sets a descript request lenght of 255
+        if (setup.wValueL != 0)
+            guess.not_mac = 1; // In testing, MacOS NEVER sets a descript request lenght of 255 unless wValueL is 0
     } else {
         guess.not_linux = 1; // In testing, Linux ALWAYS sets a descriptor request length of 255;
     }
