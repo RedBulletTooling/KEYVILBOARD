@@ -36,4 +36,4 @@ This folder contains the instructions, code + libary used within the SMS version
 This folder contains the instructions, code + libary used within the Wi-Fi version.
 
 ## Credits
-Special thanks to [Luca Bongiorni](https://github.com/whid-injector) [Jesse Vincent](https://github.com/obra), [michalmonday](https://github.com/michalmonday) and [spacehuhn](https://github.com/spacehuhn) for the code we were able to implement in our code. 
+Special thanks to [Luca Bongiorni](https://github.com/whid-injector), [Jesse Vincent](https://github.com/obra), [michalmonday](https://github.com/michalmonday) and [spacehuhn](https://github.com/spacehuhn) for the code we were able to implement in our code. 
