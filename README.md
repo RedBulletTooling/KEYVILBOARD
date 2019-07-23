@@ -19,6 +19,13 @@ This project initialy started due too the high prices online for keyloggers that
 
 Most keyloggers only store the keystrokes locally, which requires you to have physical access at least two times instead of just one time. There are some keyloggers that support remote Wi-Fi access, but the software is closed source and the antenna too small causing short range. With the KEYVILBOARD you can access the device from **practically anywhere in the world** using SMS for long term operations and from an actual safe distance using Wi-Fi for ad-hoc operations. Besides that we also have other cool features like **keystroke injection that no other keylogger on the market currently has**.
 
+## How to change the name of the keyvilboard so it is not Arduino Leonardo?
+1. Make sure all Arduino instances are closed.
+2. Navigate to Program Files (x86)\Arduino\hardware\arduino\avr.
+3. Open "boards.txt" with a text editor. 
+4. Search for ATMEGA32u4
+5. Change VID/PID and name Accordingly to what you want to be.
+
 ## KEYVILBOARD.STL
 This file contains the 3d printed case that is also delivered with your KEYVILBOARD, it fits for both SMS & Wi-Fi editions. 
 
