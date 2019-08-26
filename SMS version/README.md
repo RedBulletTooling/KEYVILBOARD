@@ -2,7 +2,7 @@
 
 **Only connect the keyboard after the KEYVILBOARD has been inserted into the USB port for a few seconds. Otherwise the keyboard and KEYVILBOARD WILL NOT work. This is due to a capacitor on the board that was added for stability.**
 
-The majority of this readme was created by [Yago Hansen](https://github.com/yadox666), full credits and thanks for his contributions.   
+The majority of this readme was created by [Yago Hansen](https://github.com/yadox666), full credits and thanks go to him for his contributions.   
      
 ## Specifications
 The KEYVILBOARD SMS module is thé hardware keylogger for long during operations, once set into place it will send all keystrokes using SMS via your mobile network provider of choice.
