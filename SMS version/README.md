@@ -190,7 +190,7 @@ $ dmesg
 ```
 
 
-## Flashing (verify, compile and upload)
+## Flashing via Linux(verify, compile and upload)
 It's important to kill ModemManager daemon in order to be able to flash the device.
 
 ```# killall ModemManager
