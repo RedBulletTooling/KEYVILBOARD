@@ -1,4 +1,5 @@
 # KEYVILBOARD Wi-Fi Setup
+https://www.youtube.com/watch?v=8y5xCug4jq0
 
 Out of the box the KEYVILBOARD Wi-Fi has the following settings:
 
@@ -11,6 +12,7 @@ After inserting the KEYVILBOARD Wi-Fi you can connect to the created hotspot (19
 **Only connect the keyboard after the KEYVILBOARD has been inserted into the USB port for a few seconds. Otherwise the keyboard and KEYVILBOARD WILL NOT work. This is due to a capacitor on the board that was added for stability.**
 
 ## Updating the KEYVILBOARD Wi-Fi
+https://www.youtube.com/watch?v=Rp-lntAAv3k
 
 Updating the KEYVILBOARD Wi-Fi is actually quite easy. You need to update the KEYVILBOARD itself and the ESP8266 chip.
 
