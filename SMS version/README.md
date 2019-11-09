@@ -1,4 +1,5 @@
 # KEYVILBOARD SMS Setup and functions
+https://www.youtube.com/watch?v=Oifod3W4mA8
 
 **Only connect the keyboard after the KEYVILBOARD has been inserted into the USB port for a few seconds. Otherwise the keyboard and KEYVILBOARD WILL NOT work. This is due to a capacitor on the board that was added for stability.**
 
