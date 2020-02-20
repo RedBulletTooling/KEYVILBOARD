@@ -290,3 +290,5 @@ avrdude done.  Thank you.
 The keylogging will be at all times persistence the subject will never notice anything different since that the modules are using a raw HID constant throughput no delay no change. We have even tested them while gaming and noticed no difference. Thanks to [michalmonday](https://github.com/michalmonday) for making this possible with his library.
      
 We are using 32kb atmega32u4 chips with the current code their is about 9kb left for payloads you can remove certaint functions to get about 16kb.
+
+Is the KEYVILBOARD SIM800L not working properly and you are receiving "+CMTI: "SM",8" instead of the normal "+CMT" with SMS contents? Go to the SIM800L map, flash the ino and reconfigure your SIM800L using the commands stated in the ino file.
