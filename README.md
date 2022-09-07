@@ -29,6 +29,9 @@ Most keyloggers only store the keystrokes locally, which requires you to have ph
 ## KEYVILBOARD.STL
 This file contains the 3d printed case that is also delivered with your KEYVILBOARD, it fits for both SMS & Wi-Fi editions. 
 
+## Hardware designs
+As we don't produce any more KEYVILBOARD's, we thought it would be appropriate to share the hardware designs - so others may build further upon it. For those interested, you may find the required information here; https://oshwlab.com/helmmen/usbhost
+
 ## SMS Version
 This folder contains the instructions, code + libary used within the SMS version.
 
